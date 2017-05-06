@@ -3,8 +3,6 @@ import os
 import json
 import mysql.connector
 
-# test2
-
 def _solve(data):
 
     user = "root"
