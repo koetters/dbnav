@@ -1,0 +1,93 @@
+swagger: '2.0'
+info:
+  version: '1.0'
+  title: Relational Database Navigation
+  description: Interactive conjunctive querying based on Formal Concept Analysis
+host: jebk.itu.dk
+basePath: /v1
+schemes:
+  - http
+paths:
+  /get_sorts:
+    get:
+      summary: get sorts
+      description: get sorts
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: a list of sorts
+          schema:
+            type: array
+            items:
+              type: string
+  /solve:
+    post:
+      summary: solve query
+      description: solve query
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: query
+          description: query graph
+          schema:
+            $ref: '#/definitions/Graph'
+          required: true
+      responses:
+        '200':
+          description: result and refinements
+          schema:
+            $ref: '#/definitions/Result'
+definitions:
+  Graph:
+    type: object
+    additionalProperties:
+      $ref: '#/definitions/Node'
+  Node:
+    type: object
+    properties:
+      sort:
+        type: string
+      def:
+        type: array
+        items:
+          type: string
+  Result:
+    type: object
+    properties:
+      header:
+        type: array
+        items:
+          type: string
+      result:
+        type: array
+        items:
+          type: array
+          items:
+            type: string
+      options:
+        type: object
+        additionalProperties:
+          $ref: '#/definitions/Option'
+  Option:
+    type: object
+    required:
+      - name
+      - grp
+    properties:
+      name:
+        type: string
+      grp:
+        type: string
+        enum:
+          - def
+          - none
+          - some
+          - all
+      pos:
+        type: integer
+      sort:
+        type: string

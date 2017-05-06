@@ -1,0 +1,659 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>pcfsearch</title>
+<style>
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+table {
+    margin: 0px auto;
+}
+
+th {
+    background: #ccc;
+}
+
+td {
+    background: white;
+}
+
+button {
+    padding: 4px 6px;
+    border-radius: 3px 3px 3px 3px;
+    font-family: Ubuntu;
+    font-size: 14px;
+    border: 1px outset #aaaaaa;
+    color: black;
+    cursor: inherit;
+}
+
+button.def {
+    background: linear-gradient(to top,yellow,white);
+    color: red;
+}
+
+button.all {
+    background: linear-gradient(to top,yellow,white);
+}
+
+button.some {
+    background: linear-gradient(to top,cyan,white);
+}
+
+button.none {
+    background: linear-gradient(to top,rgb(0,210,210),rgb(210,210,210));
+    color: gray;
+}
+
+button.down {
+    border: 1px inset #aaaaaa;
+    font-style: italic;
+}
+
+button:hover {
+    border: 1px solid black;
+}
+
+summary {
+    background: linear-gradient(to top,cyan,gray);
+}
+
+circle,rect {
+    fill: white;
+    stroke: black;
+}
+
+rect.marked {
+    fill: yellow;
+    stroke: black;
+}
+
+rect:hover {
+    stroke: red;
+}
+
+text {
+    pointer-events: none;
+}
+
+.options {
+    display: flex;
+    flex-wrap: wrap;
+}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js">
+</script>
+<script>
+queue = [];
+
+function Point(x,y) {
+    this.x = x;
+    this.y = y;
+}
+
+function Node(sort,def,point) {
+    this.sort = sort;
+    this.def = def;
+    this.marked = false;
+    this.corefs = {};
+    this.point = point;
+}
+
+function Graph() {
+    this.nodes = {};
+    this.nextId = 1;
+    this.ax = 10;
+    this.ay = 10;
+    this.radius = Math.sqrt(4*(this.ax)*(this.ay)/Math.PI); // give circle same area as rectangle for better looks
+}
+
+Graph.prototype = {
+    add_node: function(sort) {
+        var nodeId = this.nextId++;
+        this.nodes[nodeId] = new Node(sort,{},null);
+        return nodeId;
+    },
+
+    // TODO: sort implied by m?
+    add_rnode: function(nodes,m,sort) {
+
+        var neighbors = [];
+        sorts = sort.split("_")
+        for(var i=0; i < nodes.length; ++i) {
+            if(nodes[i] === null) {
+                var nodeId = this.nextId++;
+                this.nodes[nodeId] = new Node(sorts[i],{},null);
+                neighbors.push(nodeId);
+            } else {
+                neighbors.push(nodes[i]);
+            }
+        }
+
+        var relId = neighbors.join("#");
+        this.nodes[relId] = new Node(sort,{},null);
+        this.add_attribute(relId,m);
+
+        return relId;
+    },
+
+    remove_rnode: function(nodeId) {
+        delete this.nodes[nodeId];
+        this.cleanup();
+    },
+
+    add_attribute: function(nodeId,m) {
+        this.nodes[nodeId].def[m] = null;
+    },
+
+    remove_attribute: function(nodeId,m) {
+        var node = this.nodes[nodeId];
+        delete node.def[m];
+        if(this.is_rnode(nodeId) && $.isEmptyObject(node.def)) {
+            this.remove_rnode(nodeId);
+        }
+    },
+
+    set_mark: function(nodeId,marked) {
+        this.nodes[nodeId].marked = marked;
+        if(!marked) { this.cleanup(); }
+    },
+
+    add_coreference: function(nodeId1,nodeId2) {
+        this.nodes[nodeId1].corefs[nodeId2] = true;
+        this.nodes[nodeId2].corefs[nodeId1] = true;
+    },
+
+    remove_coreference: function(nodeId1,nodeId2) {
+        delete this.nodes[nodeId1].corefs[nodeId2];
+        delete this.nodes[nodeId2].corefs[nodeId1];
+    },
+
+    set_pos: function(nodeId,x,y) {
+        var node = this.nodes[nodeId];
+        node.point = new Point(x,y);
+
+        if(this.is_rnode(nodeId)) {
+            var attributes = Object.keys(node.def);
+            if(attributes.length === 1) {
+                node.def[attributes[0]] = new Point(x,y-this.ay-7);
+            }
+        }
+    },
+
+    set_apos: function(nodeId,m,x,y) {
+        this.nodes[nodeId].def[m] = new Point(x,y);
+    },
+
+    is_rnode: function(nodeId) {
+        return typeof(nodeId)==="string" && nodeId.includes("#");
+    },
+
+    is_marked: function(nodeId) {
+        return this.nodes[nodeId].marked;
+    },
+
+    cleanup: function() {
+        var rep = {};
+        var rnodes = [];
+
+        for(var nodeId in this.nodes) {
+            if(this.is_rnode(nodeId)) {
+                rnodes.push(nodeId);
+            } else {
+                rep[nodeId] = nodeId;
+            }
+        }
+
+        for(var nodeId in this.nodes) {
+            if(!(this.is_rnode(nodeId))) {
+                var node = this.nodes[nodeId];
+                var eq_reps = $.map(Object.keys(node.corefs),function(n) { return rep[n] });
+                eq_reps.push(rep[nodeId]);
+                var chosen_rep = eq_reps[0];
+                for(var j=1; j<eq_reps.length; ++j) {
+                    if(eq_reps[j] < chosen_rep) {
+                        chosen_rep = eq_reps[j];
+                    }
+                }
+                for(var otherId in rep) {
+                    if($.inArray(rep[otherId],eq_reps) != -1) {
+                        rep[otherId] = chosen_rep;
+                    }
+                }
+            }
+        }
+
+        for(var i=0; i<rnodes.length; ++i) {
+            var rkey = rnodes[i];
+            var eq_reps = $.map(rkey.split("#"),function(nodeId){ return rep[nodeId] });
+            var chosen_rep = eq_reps[0];
+            for(var j=1; j<eq_reps.length; ++j) {
+                if(eq_reps[j] < chosen_rep) {
+                    chosen_rep = eq_reps[j];
+                }
+            }
+            for(var nodeId in rep) {
+                if($.inArray(rep[nodeId],eq_reps) != -1) {
+                    rep[nodeId] = chosen_rep;
+                }
+            }
+        }
+
+        var components = {};
+        for(var nodeId in rep) {
+            if(rep[nodeId] in components) {
+                components[rep[nodeId]].push(nodeId);
+            } else {
+                components[rep[nodeId]] = [nodeId];
+            }
+        }
+
+        for(var key in components) {
+            var comp = components[key];
+            var clean=true;
+            for(var i=0; i<comp.length; ++i) {
+                var node = this.nodes[comp[i]];
+                if(node.marked) {
+                    clean=false;
+                }
+            }
+
+            if(clean) {
+                for(var i=0; i<comp.length; ++i) {
+                    var nodeId = comp[i];
+                    delete this.nodes[nodeId];
+                }
+            }
+        }
+
+        var invalidIds = {};
+        for(var k=0; k<rnodes.length; ++k) {
+            var rkey = rnodes[k];
+            var nodeIds = rkey.split("#");
+            for(var i=0; i<nodeIds.length; ++i) {
+                var nodeId = nodeIds[i];
+                if(!(nodeId in this.nodes)) {
+                    invalidIds[rkey] = true;
+                }
+            }
+        }
+        for(var rnodeId in invalidIds) {
+            delete this.nodes[rnodeId];
+        }
+    },
+
+    draw: function() {
+        var group = document.createElementNS("http://www.w3.org/2000/svg","g");
+        var $group = $(group);
+
+        for(var key in this.nodes) {
+            var node = this.nodes[key];
+            var p = node.point;
+
+            if(p !== null) {
+                if(this.is_rnode(key)) { // relation node
+                    $group.prepend(this.svg_rnode(p.x,p.y));
+
+                    var neighbors = key.split("#");
+                    for(var i=0;i<neighbors.length;++i) {
+                        var q = this.nodes[neighbors[i]].point;
+                        if(q !== null) {
+                            var e = this.compute_edge(p.x,p.y,q.x,q.y);
+                            if(e !== null) {
+                                $group.prepend(this.svg_edge(e[0].x,e[0].y,e[2].x,e[2].y));
+                                $group.prepend(this.svg_label(e[1].x,e[1].y,i+1));
+
+                            }
+                        }
+                    }
+                } else { // object node
+                    $group.prepend(this.svg_label(p.x,p.y,"#"+key));
+                    $group.prepend(this.svg_node(p.x,p.y,key,node.marked));
+                    $group.prepend(this.svg_label(p.x,p.y-(this.ay)-7,node.sort));
+
+                    for(var key2 in node.corefs) {
+                        if(key<key2) {
+                            var p2 = this.nodes[key2].point;
+                            $group.append(this.svg_link(p.x,p.y,p2.x,p2.y));
+                        }
+                    }
+                }
+            }
+
+            for(var m in node.def) {
+                var q = node.def[m];
+                if(q !== null) {
+                    $group.prepend(this.svg_label(q.x,q.y,m));
+
+                }
+            }
+        }
+
+        $("svg > g").replaceWith($group);
+        
+    },
+
+    compute_edge: function(rx,ry,x,y) {
+        // (dx,dy) = vector from rnode to node
+        var dx=x-rx, dy=y-ry;
+
+        // (rx,ry) + s*(dx,dy) = intersection of line with sphere (only for s<1)
+        var length = Math.sqrt(Math.pow(dx,2)+Math.pow(dy,2));
+        var s = (this.radius<length) ? this.radius/length : 1;
+
+        // (rx,ry) + (1-t)*(dx,dy) = intersection of line with rectangle side (only for t<1)
+        var tx=1,ty=1;
+        if(Math.abs(dx) > this.ax) { tx = this.ax/Math.abs(dx); }
+        if(Math.abs(dy) > this.ay) { ty = this.ay/Math.abs(dy); }
+        var t=Math.min(tx,ty);
+
+        // if rnode and node don't overlap, return endpoints of the edge
+        if(s<1 && t<1 && s<(1-t)) {
+            var m = 0.5*(s+1-t);
+            return [new Point(rx+s*dx,ry+s*dy), new Point(rx+m*dx,ry+m*dy), new Point(rx+(1-t)*dx,ry+(1-t)*dy)];
+        } else {
+            return null;
+        }
+    },
+
+    svg_node: function(x,y,id,marked) {
+        var node = document.createElementNS("http://www.w3.org/2000/svg","rect");
+        var $node = $(node).attr({"data-id":id,"x":x-this.ax,"y":y-this.ay,"width":2*this.ax,"height":2*this.ay})
+                           .on("click",toggle_mark);
+        if(marked) {
+            $node.addClass("marked");
+        }
+        return $node;
+    },
+
+    svg_label: function(x,y,text) {
+        var label = document.createElementNS("http://www.w3.org/2000/svg","text");
+        var $label = $(label).attr({"x":x,"y":y,"text-anchor":"middle","dominant-baseline":"central","font-family":"Ubuntu","font-size":"14.00"})
+                             .text(text);
+        return $label;
+    },
+
+    svg_rnode: function(x,y) {
+        var rnode = document.createElementNS("http://www.w3.org/2000/svg","circle");
+        var $rnode = $(rnode).attr({"cx":x,"cy":y,"r":this.radius});
+        return $rnode;
+    },
+
+    svg_edge: function(x1,y1,x2,y2) {
+        cmd = "M" + x1 + "," + y1 + "L" + x2 + "," + y2;
+        var path = document.createElementNS("http://www.w3.org/2000/svg","path");
+        var $path = $(path).attr({"fill":"none","stroke":"black","d":cmd});
+        return $path;
+    },
+
+    svg_link: function(x1,y1,x2,y2) {
+        cmd = "M" + x1 + "," + y1 + "L" + x2 + "," + y2;
+        var path = document.createElementNS("http://www.w3.org/2000/svg","path");
+        var $path = $(path).attr({"fill":"none","stroke":"red","stroke-dasharray":5,"d":cmd});
+        return $path;
+    },
+
+    json: function() {
+        var copy = {};
+        for(var id in this.nodes) {
+            var node = this.nodes[id];
+            copy[id] = {'sort':node.sort, 'def':Object.keys(node.def), 'marked':node.marked, 'corefs':Object.keys(node.corefs) };
+        }
+        return JSON.stringify(copy);
+    }
+};
+
+graph = new Graph();
+
+function create_node() {
+
+    if(queue.length>0) { return; }
+
+    var sort = $(this).text();
+    var id = graph.add_node(sort);
+    graph.set_mark(id,true);
+
+    var action = $.Deferred();
+    action.done(function(x,y){
+        graph.set_pos(id,x,y);
+    });
+
+    queue.push(action);
+    $('html').css('cursor','copy');
+}
+
+function create_rnode() {
+
+    if(queue.length>0) { return; }
+
+    var $this = $(this);
+    var obj = $this.data("obj");
+    var rel = $this.data("rel");
+    var role = $this.data("role");
+    var sort = $this.data("sort");
+
+    var nodes = sort.split("_").map(function(v,i){ return (i+1===role) ? obj : null });
+    var relId = graph.add_rnode(nodes,rel,sort);
+    var neighbors = relId.split("#");
+
+    var action = $.Deferred();
+    action.done(function(rx,ry){
+        graph.set_pos(relId,rx,ry);
+
+    });
+    queue.push(action);
+
+    for(var i=0; i<nodes.length; ++i) {
+        if(nodes[i] === null) {
+            var action2 = $.Deferred();
+            action2.done(function(j){
+                return function(x,y){
+                    graph.set_pos(neighbors[j],x,y);
+                };
+            }(i));
+
+            queue.push(action2);
+        }
+    } // end for
+
+    $('html').css('cursor','copy');
+}
+
+function toggle_attribute() {
+
+    if(queue.length>0) { return; }
+
+    var $this = $(this);
+    var nodeId = $this.data("obj");
+    var m = $this.text();
+
+    if($this.hasClass("all") || $this.hasClass("some")) {
+        graph.add_attribute(nodeId,m);
+
+        var action = $.Deferred();
+        action.done(function(x,y){
+            graph.set_apos(nodeId,m,x,y);
+        });
+
+        queue.push(action);
+        $('html').css('cursor','copy');
+
+    } else if($this.hasClass("def")) {
+        graph.remove_attribute(nodeId,m);
+        graph.draw();
+        solve();
+    }
+}
+
+function toggle_mark() {
+    if(queue.length>0) { return; }
+
+    var $this = $(this);
+    var nodeId = $this.data("id");
+    var marked = graph.is_marked(nodeId);
+    graph.set_mark(nodeId,!marked);
+    graph.draw();
+    solve();
+
+}
+
+function toggle_coreference() {
+    if(queue.length>0) { return; }
+
+    var $this = $(this);
+    var nodeId1 = $this.data("lhs");
+    var nodeId2 = $this.data("rhs");
+
+    if($this.hasClass("all") || $this.hasClass("some")) {
+        graph.add_coreference(nodeId1,nodeId2);
+
+    } else if($this.hasClass("def")) {
+        graph.remove_coreference(nodeId1,nodeId2);
+    }
+    graph.draw();
+    solve();
+
+}
+
+function get_sorts() {
+    $.ajax({
+        url: "/get_sorts/",
+        dataType: "json"
+    }).done(function(data,status,jqxhr) {
+
+        var details = $("<details>").prop("open",true);
+        $("<summary>").text("Sorts").appendTo(details);
+        var div = $("<div>").addClass("options");
+        $.each(data,function(index,sort){
+            $("<button>").addClass("sort").text(sort).on("click",create_node).appendTo(div);
+        });
+        details.append(div);
+        $("#sortsView").prepend(details);
+    });
+}
+
+function solve() {
+    $.ajax({
+        url: "/solve/",
+        type: "POST",
+        data: graph.json(),
+        contentType: "application/json",
+        dataType: "json"
+    }).done(function(data,status,jqxhr){
+        var header = data["header"];
+        var result = data["result"];
+        var options = data["options"];
+        var equalities = data["equalities"];
+
+        var resultTable = $("<table>").attr("id","resultTable");
+        var hrow = $("<tr>");
+        $.each(header,function(index,column) {
+            $("<th>").text(column).appendTo(hrow);
+        });
+        resultTable.append(hrow);
+        $.each(result,function(i,tuple) {
+            var row = $("<tr>");
+            $.each(tuple,function(j,value) {
+                $("<td>").text(value).appendTo(row);
+            });
+            resultTable.append(row);
+        });
+        $("#resultTable").replaceWith(resultTable)
+
+        var optionsView = $("<div>").attr("id","optionsView");
+        $.each(options,function(nodeId,nodeOpts) {
+            var details = $("<details>").addClass("nodeContext").prop("open",true);
+            $("<summary>").text("Node "+nodeId).appendTo(details);
+            var div = $("<div>").addClass("options");
+            $.each(nodeOpts,function(index,entry){
+                if(entry.hasOwnProperty("pos")) { // role attribute
+                    $("<button>").addClass("role")
+                                 .addClass(entry["grp"])
+                                 .text(entry["name"]+"["+entry["pos"]+"]")
+                                 .attr("data-obj",nodeId)
+                                 .attr("data-rel",entry["name"])
+                                 .attr("data-role",entry["pos"])
+                                 .attr("data-sort",entry["sort"])
+                                 .on("click",create_rnode)
+                                 .appendTo(div);
+                } else {
+                    $("<button>").addClass("attribute")
+                                 .addClass(entry["grp"])
+                                 .text(entry["name"])
+                                 .attr("data-obj",nodeId)
+                                 .on("click",toggle_attribute)
+                                 .appendTo(div);
+                }
+            });
+            details.append(div);
+            optionsView.append(details);
+        });
+
+        var details = $("<details>").addClass("nodeContext").prop("open",true);
+        $("<summary>").text("Equalities").appendTo(details);
+        var div = $("<div>").addClass("options");
+        $.each(equalities,function(index,eq) {
+            $("<button>").addClass("equality")
+                         .addClass(eq["grp"])
+                         .attr("data-lhs",eq["lhs"])
+                         .attr("data-rhs",eq["rhs"])
+                         .text(eq["lhs"]+"="+eq["rhs"])
+                         .on("click",toggle_coreference)
+                         .appendTo(div);
+        });
+        details.append(div);
+        optionsView.append(details);
+
+        $("#optionsView").replaceWith(optionsView);
+    });
+}
+
+function place_node(e) {
+    if(queue.length > 0) {
+
+        var $this = $(this);
+        var $node = queue.shift();
+
+        var x = e.pageX - $this.offset().left;
+        var y = e.pageY - $this.offset().top;
+
+        $node.resolve(x,y);
+        graph.draw();
+
+        if(queue.length == 0) {
+            $('html').css('cursor','default');
+            solve();
+        }
+    }
+}
+
+$(document).ready(function(){
+    get_sorts();
+    $("svg").on("click",place_node);
+
+});
+
+</script>
+</head>
+<body style="height:100vh;margin:0px;">
+    <main style="height:100%;">
+        <section style="display:flex;height:50%;">
+            <section style="background:gray;width:25%;">
+                <div id="sortsView"></div>
+                <div id="optionsView"></div>
+            </section>
+            <svg style="background:white;width:75%;">
+                <g></g>
+            </svg>
+        </section>
+        <section style="background:blue;height:50%;overflow:auto;">
+            <table id="resultTable"></table>
+        </section>
+    </main>
+</body>
+</html>
