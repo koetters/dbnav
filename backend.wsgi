@@ -2,118 +2,204 @@ import re
 import os
 import json
 import mysql.connector
+from itertools import izip
+
+class UnaryScale(object):
+
+    def __init__(self,name,atts):
+        self.name = name
+        self.atts = dict(atts)
+
+    def sql(self,atts,var,col):
+        arg = re.sub(r"^[^.]+",var,col)
+        where = [ self.atts[m].format(arg) for m in atts ]
+        if atts:
+            refs = { m: ("def" if m in atts else "none") for m in self.atts }
+        else:
+            refs = { m: "MIN({0})+MAX({0})".format(p.format(arg)) for m,p in self.atts.items() }
+        return (where,refs)
+
+class BinaryScale(object):
+
+    def __init__(self,name,atts):
+        self.name = name
+        self.atts = dict(atts)
+
+    def sql(self,atts,vars,cols):
+        args = [ re.sub(r"^[^.]+",x,col) for x,col in izip(vars,cols) ]
+        where = [ self.atts[m].format(*args) for m in atts ]
+        if atts:
+            refs = { m: ("def" if m in atts else "none") for m in self.atts }
+        else:
+            refs = { m: "MIN({0})+MAX({0})".format(p.format(*args)) for m,p in self.atts.items() }
+        return (where,refs)
+
+    def rolesql(self,var,pos,cols):
+        sorts = [ col.split(".",1)[0] for col in cols ]
+        vars = [ "_{0}".format(i+1) for i in range(len(cols)) ]
+        vars[pos-1] = var
+
+        args = [ re.sub(r"^[^.]+",x,col) for x,col in izip(vars,cols) ]
+        aliases = [ "{0} AS {1}".format(s,x) for s,x in izip(sorts,vars) if x != var ]
+        sqlfrom = ", ".join(aliases)
+
+        refs = { m: "MIN({0})+MAX({0})".format("EXISTS(SELECT * FROM {0} WHERE {1})").format(sqlfrom,p.format(*args)) for m,p in self.atts.items() }
+        return refs
+
+class Bindings(object):
+
+    def __init__(self):
+        self._bindings = {
+            "pubdate": (centuryScale,["book.publication_date"]),
+            "nationality": (countryScale,["author.nationality"]),
+            "birthdate": (centuryScale,["author.date_of_birth"]),
+            "bookauthor": (foreignKeyScale,["book.author","author.name"]),
+        }
+
+    def __call__(self,sort,role=None):
+
+        scales = []
+
+        if role:
+            for prefix,bound_scale in self._bindings.items():
+                scale,columns = bound_scale
+                if len(columns) > 1 and role <= len(columns) and columns[role-1].startswith(sort+"."):
+                    scales.append((prefix,scale,columns))
+
+        else:
+            sorts = sort.split("#") if "#" in sort else [sort]
+            for prefix,bound_scale in self._bindings.items():
+                scale,columns = bound_scale
+                if len(sorts) == len(columns) and all(col.startswith(s+".") for s,col in izip(sorts,columns)):
+                    scales.append((prefix,scale,columns))
+
+        return scales
+
+    def sorts(self,prefix):
+        return [ column.split(".")[0] for column in self._bindings[prefix][1] ]
+
+centuryScale = UnaryScale("century", {
+    "19th": "{0} BETWEEN '1800-01-01' AND '1899-12-31'",
+    "20th": "{0} BETWEEN '1900-01-01' AND '1999-12-31'",
+    "21st": "{0} BETWEEN '2000-01-01' AND '2099-12-31'",
+})
+
+countryScale = UnaryScale("country", {
+    "USA": "{0}='American'",
+    "GB": "{0}='British'",
+})
+
+foreignKeyScale = BinaryScale("foreignKey", {
+    "author": "{0}={1}",
+})
+
+bindings = Bindings()
+
+output = {
+    "author": "{0}.name",
+    "book": "{0}.title"
+}
+
+def out(t,sort):
+    return output[sort].format(t)
 
 def _solve(data):
 
     user = "root"
     password = "password"
     host = "localhost"
-    database = "literature_pcf"
+    database = "literature"
 
     graph = json.loads(data)
     if not graph:
         return json.dumps(dict(header=[],result=[],options={},equalities=[]))
 
-    nodes = {}
-    rnodes = {}
-
-    for k,v in graph.items():
-        if "#" in k:
-            rnodes[k] = v
-        else:
-            nodes[k] = v
-
-    def name(str):
-        return "t"+str.replace("#","_")
-
-    def inv_name(str):
-        return str[1:].replace("_","#")
-
-    cnx = mysql.connector.connect(user=user,password=password,host=host,database=database)
-    cursor = cnx.cursor()
-
-    sql0 = "SELECT table_name,column_name FROM information_schema.columns "\
-           "WHERE table_schema='{0}' AND column_name NOT RLIKE '^(p[0-9]*|id)$'".format(database)
-    cursor.execute(sql0)
-    rows = cursor.fetchall()
-
-    signature = {}
-    for row in rows:
-        sort,m = row
-        if sort in signature:
-            signature[sort] += [m]
-        else:
-            signature[sort] = [m]
-
-    # sql1 = "SELECT table_name,column_name,referenced_table_name,referenced_column_name FROM information_schema.key_column_usage " \
-    #        "WHERE table_schema='{0}' AND referenced_table_schema='{0}'".format(database)
-    # cursor.execute(sql1)
-    # rows = cursor.fetchall()
-
-    select = ["{0} AS {1}".format(name(k)+".id",name(k)) for k,v in nodes.items() if v["marked"]]
-    select2 = ["MIN({0}.{1}), MAX({0}.{1})".format(name(k),m) for k,v in graph.items() for m in signature[v["sort"]]]
-    select3 = ["MIN({0}.id={1}.id), MAX({0}.id={1}.id)".format(name(k1),name(k2)) for k1 in nodes.keys() for k2 in nodes.keys() if k1<k2]
-    sqlfrom = ["{0} AS {1}".format(v["sort"],name(k)) for k,v in graph.items()]
-    where1 = ["{0}.p{1}={2}.id".format(name(s),str(j+1),name(k)) for s in rnodes for j,k in enumerate(s.split("#"))]
-    where2 = ["{0}.{1}=1".format(name(k),m) for k,v in graph.items() for m in v["def"]]
-    where3 = ["{0}.id={1}.id".format(name(k1),name(k2)) for k1,v in nodes.items() for k2 in v["corefs"] if k1<k2]
-    where = where1 + where2 + where3
-
-    sql2 = "SELECT DISTINCT " + ", ".join(select) + " FROM " + ", ".join(sqlfrom) + (" WHERE " if where else "") + " AND ".join(where)
-    cursor.execute(sql2)
-    rows = cursor.fetchall()
-    header = [inv_name(t[0]) for t in cursor.description]
-
-    sql3 = "SELECT " + ", ".join(select2+select3) + " FROM " + ", ".join(sqlfrom) + (" WHERE " if where else "") + " AND ".join(where)
-    cursor.execute(sql3)
-    row = cursor.fetchone()
-    header2 = [t[0] for t in cursor.description]
-    cursor.close()
-    cnx.close()
+    select = []
+    refselect = []
+    sqlfrom = []
+    where = []
 
     options = {}
     equalities = []
 
-    for i in range(0,len(header2),2):
+    for k,v in graph.items():
 
-        match = re.search(r"MIN\(([^.]+)\.id=([^.]+)\.id\)",header2[i])
-        if match:
-            nodeId1 = inv_name(match.group(1))
-            nodeId2 = inv_name(match.group(2))
+        if "#" in k:
+            for prefix,scale,columns in bindings(v["sort"]):
+                conditions,refs = scale.sql(v["def"].get(prefix,[]), k.split("#"), columns)
+                where += conditions
 
-            k = row[i]+row[i+1]
-            f = ["none","some","all"]
-            grp = f[k]
-
-            if nodeId1 in graph[nodeId2]["corefs"]:
-                grp = "def"
-
-            if grp != "none":
-                equalities += [ dict(lhs=nodeId1,rhs=nodeId2,grp=grp) ]
+                for m,value in refs.items():
+                    if value in ["none","some","all","def"]:
+                        options.setdefault(k,{}).setdefault(prefix,[]).append(dict(name=m,grp=value))
+                    else:
+                        refselect.append("{0} AS '{1}.{2}:{3}'".format(value,k,prefix,m))
 
         else:
-            match = re.search(r"MIN\(([^.]+)\.([^)]+)\)",header2[i])
-            nodeId = inv_name(match.group(1))
-            m = match.group(2)
 
-            k = row[i]+row[i+1]
-            f = ["none","some","all"]
-            grp = f[k]
+            if v["marked"]:
+                select.append("{0} AS {1}".format(out(k,v["sort"]),k))
 
-            if m in graph[nodeId]["def"]:
-                grp = "def"
+            sqlfrom.append("{0} AS {1}".format(v["sort"],k))
 
-            if "$" in m:
-                sort,rest = m.split("$")
-                rel,pos = rest.rsplit("_",1)
-                entry = dict(name=rel,pos=pos,sort=sort,grp=grp)
-            else:
-                entry = dict(name=m,grp=grp)
+            for prefix,scale,columns in bindings(v["sort"]):
+                conditions,refs = scale.sql(v["def"].get(prefix,[]),k,columns[0])
+                where += conditions
 
-            if nodeId in options:
-                options[nodeId] += [entry]
-            else:
-                options[nodeId] = [entry]
+                for m,value in refs.items():
+                    if value in ["none","some","all","def"]:
+                        options.setdefault(k,{}).setdefault(prefix,[]).append(dict(name=m,grp=value))
+                    else:
+                        refselect.append("{0} AS '{1}.{2}:{3}'".format(value,k,prefix,m))
+
+            for role in [1,2]:
+                for prefix,scale,columns in bindings(v["sort"],role):
+                    refs = scale.rolesql(k,role,columns)
+
+                    for m,value in refs.items():
+                        if value in ["none","some","all","def"]:
+                            options.setdefault(k,{}).setdefault(prefix,[]).append(dict(name=m,grp=value,pos=role,sort=bindings.sorts(prefix)))
+                        else:
+                            refselect.append("{0} AS '{1}.{2}:{3}[{4}]'".format(value,k,prefix,m,role))
+
+    for k1,v1 in graph.items():
+        for k2,v2 in graph.items():
+            if v1["sort"]==v2["sort"] and "#" not in k1 and k1<k2:
+                condition = "{0}={1}".format(out(k1,v1["sort"]),out(k2,v2["sort"]))
+                if k2 in graph[k1]["corefs"]:
+                    where.append(condition)
+                    equalities.append(dict(lhs=k1,rhs=k2,grp="def"))
+                else:
+                    refselect.append("MIN({0})+MAX({0}) AS '{1}={2}'".format(condition,k1,k2))
+
+    cnx = mysql.connector.connect(user=user,password=password,host=host,database=database)
+    cursor = cnx.cursor()
+
+    query = "SELECT DISTINCT " + ", ".join(select) + " FROM " + ", ".join(sqlfrom) + (" WHERE " if where else "") + " AND ".join(where)
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    header = [t[0] for t in cursor.description]
+
+    refquery = "SELECT " + ", ".join(refselect) + " FROM " + ", ".join(sqlfrom) + (" WHERE " if where else "") + " AND ".join(where)
+    cursor.execute(refquery)
+    row = cursor.fetchone()
+    refheader = [t[0] for t in cursor.description]
+    cursor.close()
+    cnx.close()
+
+    groups = ["none","some","all"]
+    for field,k in izip(refheader,row):
+        if "=" in field:
+            lhs,rhs = field.split("=")
+            equalities.append(dict(lhs=lhs,rhs=rhs,grp=groups[k]))
+
+        else:
+            nodeId,prefix,m,role = re.match(r"([#\w]+).(\w+):(\w+)(?:\[(\w+)\])?",field).groups()
+            entry = dict(name=m,grp=groups[k])
+            if role:
+                entry["pos"]=role
+                entry["sort"]=bindings.sorts(prefix)
+            options.setdefault(nodeId,{}).setdefault(prefix,[]).append(entry)
 
     response = json.dumps(dict(header=header,result=rows,options=options,equalities=equalities))
     return(response)
@@ -123,14 +209,12 @@ def _get_sorts():
     user = "root"
     password = "password"
     host = "localhost"
-    database = "literature_pcf"
+    database = "literature"
 
     cnx = mysql.connector.connect(user=user,password=password,host=host,database=database)
     cursor = cnx.cursor()
 
-    sql0 = "SELECT table_name,column_name FROM information_schema.columns "\
-           "WHERE table_schema='{0}' AND column_name='id'".format(database)
-    cursor.execute(sql0)
+    cursor.execute("SHOW TABLES")
     rows = cursor.fetchall()
     sorts = [t[0] for t in rows]
 

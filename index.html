@@ -33,19 +33,23 @@ button {
 }
 
 button.def {
+    padding: 1px 2px;
     background: linear-gradient(to top,yellow,white);
     color: red;
 }
 
 button.all {
+    padding: 1px 2px;
     background: linear-gradient(to top,yellow,white);
 }
 
 button.some {
+    padding: 1px 2px;
     background: linear-gradient(to top,cyan,white);
 }
 
 button.none {
+    padding: 1px 2px;
     background: linear-gradient(to top,rgb(0,210,210),rgb(210,210,210));
     color: gray;
 }
@@ -85,6 +89,11 @@ text {
     display: flex;
     flex-wrap: wrap;
 }
+
+.label {
+    font-family: Ubuntu;
+    font-size: 14px;
+}
 </style>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js">
 </script>
@@ -96,12 +105,12 @@ function Point(x,y) {
     this.y = y;
 }
 
-function Node(sort,def,point) {
+function Node(sort) {
     this.sort = sort;
-    this.def = def;
+    this.def = {};
     this.marked = false;
     this.corefs = {};
-    this.point = point;
+    this.point = null;
 }
 
 function Graph() {
@@ -114,28 +123,17 @@ function Graph() {
 
 Graph.prototype = {
     add_node: function(sort) {
-        var nodeId = this.nextId++;
-        this.nodes[nodeId] = new Node(sort,{},null);
+        var nodeId = "t"+this.nextId++;
+        this.nodes[nodeId] = new Node(sort);
         return nodeId;
     },
 
-    // TODO: sort implied by m?
-    add_rnode: function(nodes,m,sort) {
+    add_rnode: function(nodeIds,m) {
+        var relId = nodeIds.join("#");
+        var sort = nodeIds.map(function(nodeId){ return this.nodes[nodeId].sort },this).join("#");
 
-        var neighbors = [];
-        sorts = sort.split("_")
-        for(var i=0; i < nodes.length; ++i) {
-            if(nodes[i] === null) {
-                var nodeId = this.nextId++;
-                this.nodes[nodeId] = new Node(sorts[i],{},null);
-                neighbors.push(nodeId);
-            } else {
-                neighbors.push(nodes[i]);
-            }
-        }
-
-        var relId = neighbors.join("#");
-        this.nodes[relId] = new Node(sort,{},null);
+        var rnode = new Node(sort);
+        this.nodes[relId] = rnode;
         this.add_attribute(relId,m);
 
         return relId;
@@ -147,13 +145,28 @@ Graph.prototype = {
     },
 
     add_attribute: function(nodeId,m) {
-        this.nodes[nodeId].def[m] = null;
+        var prefix = m.split(":")[0];
+        var name = m.split(":")[1];
+        var def = this.nodes[nodeId].def;
+
+        if(!(prefix in def)) {
+            def[prefix] = {};
+        }
+
+        def[prefix][name] = null;
     },
 
     remove_attribute: function(nodeId,m) {
-        var node = this.nodes[nodeId];
-        delete node.def[m];
-        if(this.is_rnode(nodeId) && $.isEmptyObject(node.def)) {
+        var prefix = m.split(":")[0];
+        var name = m.split(":")[1];
+        var def = this.nodes[nodeId].def;
+
+        delete def[prefix][name];
+        if(Object.keys(def[prefix]).length == 0) {
+            delete def[prefix];
+        }
+
+        if(this.is_rnode(nodeId) && Object.keys(def).length == 0) {
             this.remove_rnode(nodeId);
         }
     },
@@ -171,22 +184,19 @@ Graph.prototype = {
     remove_coreference: function(nodeId1,nodeId2) {
         delete this.nodes[nodeId1].corefs[nodeId2];
         delete this.nodes[nodeId2].corefs[nodeId1];
+        this.cleanup();
     },
 
     set_pos: function(nodeId,x,y) {
         var node = this.nodes[nodeId];
         node.point = new Point(x,y);
-
-        if(this.is_rnode(nodeId)) {
-            var attributes = Object.keys(node.def);
-            if(attributes.length === 1) {
-                node.def[attributes[0]] = new Point(x,y-this.ay-7);
-            }
-        }
     },
 
     set_apos: function(nodeId,m,x,y) {
-        this.nodes[nodeId].def[m] = new Point(x,y);
+        var prefix = m.split(":")[0];
+        var name = m.split(":")[1];
+        var def = this.nodes[nodeId].def;
+        def[prefix][name] = new Point(x,y);
     },
 
     is_rnode: function(nodeId) {
@@ -312,7 +322,7 @@ Graph.prototype = {
                         }
                     }
                 } else { // object node
-                    $group.prepend(this.svg_label(p.x,p.y,"#"+key));
+                    $group.prepend(this.svg_label(p.x,p.y,key.replace("t","#")));
                     $group.prepend(this.svg_node(p.x,p.y,key,node.marked));
                     $group.prepend(this.svg_label(p.x,p.y-(this.ay)-7,node.sort));
 
@@ -325,11 +335,12 @@ Graph.prototype = {
                 }
             }
 
-            for(var m in node.def) {
-                var q = node.def[m];
-                if(q !== null) {
-                    $group.prepend(this.svg_label(q.x,q.y,m));
-
+            for(var prefix in node.def) {
+                for(var name in node.def[prefix]) {
+                    var q = node.def[prefix][name];
+                    if(q !== null) {
+                        $group.prepend(this.svg_label(q.x,q.y,name));
+                    }
                 }
             }
         }
@@ -400,9 +411,14 @@ Graph.prototype = {
 
     json: function() {
         var copy = {};
-        for(var id in this.nodes) {
-            var node = this.nodes[id];
-            copy[id] = {'sort':node.sort, 'def':Object.keys(node.def), 'marked':node.marked, 'corefs':Object.keys(node.corefs) };
+        for(var nodeId in this.nodes) {
+            var node = this.nodes[nodeId];
+            var atts = {};
+            for(var prefix in node.def) {
+                atts[prefix] = Object.keys(node.def[prefix]);
+            }
+
+            copy[nodeId] = {'sort':node.sort, 'def':atts, 'marked':node.marked, 'corefs':Object.keys(node.corefs) };
         }
         return JSON.stringify(copy);
     }
@@ -433,33 +449,38 @@ function create_rnode() {
 
     var $this = $(this);
     var obj = $this.data("obj");
-    var rel = $this.data("rel");
-    var role = $this.data("role");
+    var m = $this.data("attr");
     var sort = $this.data("sort");
+    var role = $this.data("role");
 
-    var nodes = sort.split("_").map(function(v,i){ return (i+1===role) ? obj : null });
-    var relId = graph.add_rnode(nodes,rel,sort);
-    var neighbors = relId.split("#");
+    var nodes = [];
+    for(var i=0; i<sort.length; ++i) {
+
+        if(i+1 !== role) {
+            var nodeId = graph.add_node(sort[i]);
+            nodes.push(nodeId);
+            var action = $.Deferred();
+            action.done(function(j){
+                return function(x,y) {
+                    graph.set_pos(j,x,y);
+                }
+            }(nodeId));
+            queue.push(action);
+
+        } else {
+            nodes.push(obj);
+        }
+    }
+
+    var relId = graph.add_rnode(nodes,m);
 
     var action = $.Deferred();
     action.done(function(rx,ry){
         graph.set_pos(relId,rx,ry);
+        graph.set_apos(relId,m,rx,ry-graph.ay-7);
 
     });
-    queue.push(action);
-
-    for(var i=0; i<nodes.length; ++i) {
-        if(nodes[i] === null) {
-            var action2 = $.Deferred();
-            action2.done(function(j){
-                return function(x,y){
-                    graph.set_pos(neighbors[j],x,y);
-                };
-            }(i));
-
-            queue.push(action2);
-        }
-    } // end for
+    queue.unshift(action);
 
     $('html').css('cursor','copy');
 }
@@ -470,13 +491,13 @@ function toggle_attribute() {
 
     var $this = $(this);
     var nodeId = $this.data("obj");
-    var m = $this.text();
+    var m = $this.data("attr");
 
     if($this.hasClass("all") || $this.hasClass("some")) {
         graph.add_attribute(nodeId,m);
 
         var action = $.Deferred();
-        action.done(function(x,y){
+        action.done(function(x,y) {
             graph.set_apos(nodeId,m,x,y);
         });
 
@@ -552,8 +573,8 @@ function solve() {
 
         var resultTable = $("<table>").attr("id","resultTable");
         var hrow = $("<tr>");
-        $.each(header,function(index,column) {
-            $("<th>").text(column).appendTo(hrow);
+        $.each(header,function(index,colname) {
+            $("<th>").text(colname.replace("t","#")).appendTo(hrow);
         });
         resultTable.append(hrow);
         $.each(result,function(i,tuple) {
@@ -568,29 +589,36 @@ function solve() {
         var optionsView = $("<div>").attr("id","optionsView");
         $.each(options,function(nodeId,nodeOpts) {
             var details = $("<details>").addClass("nodeContext").prop("open",true);
-            $("<summary>").text("Node "+nodeId).appendTo(details);
-            var div = $("<div>").addClass("options");
-            $.each(nodeOpts,function(index,entry){
-                if(entry.hasOwnProperty("pos")) { // role attribute
-                    $("<button>").addClass("role")
-                                 .addClass(entry["grp"])
-                                 .text(entry["name"]+"["+entry["pos"]+"]")
-                                 .attr("data-obj",nodeId)
-                                 .attr("data-rel",entry["name"])
-                                 .attr("data-role",entry["pos"])
-                                 .attr("data-sort",entry["sort"])
-                                 .on("click",create_rnode)
-                                 .appendTo(div);
-                } else {
-                    $("<button>").addClass("attribute")
-                                 .addClass(entry["grp"])
-                                 .text(entry["name"])
-                                 .attr("data-obj",nodeId)
-                                 .on("click",toggle_attribute)
-                                 .appendTo(div);
-                }
+            var sort = graph.nodes[nodeId].sort
+            $("<summary>").text(sort+" "+nodeId.replace("t","#")).appendTo(details);
+            $.each(nodeOpts,function(prefix,scaleOpts) {
+                var div = $("<div>").addClass("options");
+                $("<span>").addClass("label")
+                           .text(prefix+": ")
+                           .appendTo(div);
+                $.each(scaleOpts,function(index,entry) {
+                    if(entry.hasOwnProperty("pos")) { // role attribute
+                        $("<button>").addClass("role")
+                                     .addClass(entry["grp"])
+                                     .text(entry["name"]+"["+entry["pos"]+"]")
+                                     .attr("data-obj",nodeId)
+                                     .attr("data-attr",prefix+":"+entry["name"])
+                                     .attr("data-role",entry["pos"])
+                                     .attr("data-sort",JSON.stringify(entry["sort"]))
+                                     .on("click",create_rnode)
+                                     .appendTo(div);
+                    } else {
+                        $("<button>").addClass("attribute")
+                                     .addClass(entry["grp"])
+                                     .text(entry["name"])
+                                     .attr("data-obj",nodeId)
+                                     .attr("data-attr",prefix+":"+entry["name"])
+                                     .on("click",toggle_attribute)
+                                     .appendTo(div);
+                    }
+                });
+                details.append(div);
             });
-            details.append(div);
             optionsView.append(details);
         });
 
