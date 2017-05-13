@@ -523,7 +523,7 @@ function toggle_coreference() {
 
 function get_sorts() {
     $.ajax({
-        url: "/get_sorts/",
+        url: "get_sorts/",
         dataType: "json"
     }).done(function(data,status,jqxhr) {
 
@@ -540,7 +540,7 @@ function get_sorts() {
 
 function solve() {
     $.ajax({
-        url: "/solve/",
+        url: "solve/",
         type: "POST",
         data: graph.json(),
         contentType: "application/json",
