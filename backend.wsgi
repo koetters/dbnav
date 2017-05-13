@@ -5,7 +5,8 @@ import mysql.connector
 import sqlite3
 
 def dbinfo():
-    cnx = sqlite3.connect("db.sqlite")
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
     cursor = cnx.cursor()
     cursor.execute("SELECT * FROM connection")
 
