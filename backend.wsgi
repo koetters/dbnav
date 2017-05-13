@@ -3,6 +3,7 @@ import os
 import json
 import mysql.connector
 from itertools import izip
+import sqlite3
 
 class UnaryScale(object):
 
@@ -103,12 +104,20 @@ output = {
 def out(t,sort):
     return output[sort].format(t)
 
-def _solve(data):
+def dbinfo():
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
+    cursor = cnx.cursor()
+    cursor.execute("SELECT * FROM connection")
+    header = [ t[0] for t in cursor.description ]
+    row = cursor.fetchone()
 
-    user = "root"
-    password = "password"
-    host = "localhost"
-    database = "literature"
+    cursor.close()
+    cnx.close()
+
+    return dict(zip(header,row))
+
+def _solve(data):
 
     graph = json.loads(data)
     if not graph:
@@ -172,7 +181,8 @@ def _solve(data):
                 else:
                     refselect.append("MIN({0})+MAX({0}) AS '{1}={2}'".format(condition,k1,k2))
 
-    cnx = mysql.connector.connect(user=user,password=password,host=host,database=database)
+    info = dbinfo()
+    cnx = mysql.connector.connect(**info)
     cursor = cnx.cursor()
 
     query = "SELECT DISTINCT " + ", ".join(select) + " FROM " + ", ".join(sqlfrom) + (" WHERE " if where else "") + " AND ".join(where)
@@ -206,14 +216,9 @@ def _solve(data):
 
 def _get_sorts():
 
-    user = "root"
-    password = "password"
-    host = "localhost"
-    database = "literature"
-
-    cnx = mysql.connector.connect(user=user,password=password,host=host,database=database)
+    info = dbinfo()
+    cnx = mysql.connector.connect(**info)
     cursor = cnx.cursor()
-
     cursor.execute("SHOW TABLES")
     rows = cursor.fetchall()
     sorts = [t[0] for t in rows]

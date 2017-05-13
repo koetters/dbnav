@@ -100,6 +100,24 @@ text {
 <script>
 queue = [];
 
+function abspath(url) {
+
+    if(!url.endsWith("/")) {
+        url += "/";
+    }
+
+    if(url.startsWith("/")) {
+        return url;
+    }
+
+    current_url = window.location.pathname;
+    if(!current_url.endsWith("/")) {
+        current_url += "/";
+    }
+
+    return current_url + url
+}
+
 function Point(x,y) {
     this.x = x;
     this.y = y;
@@ -543,7 +561,7 @@ function toggle_coreference() {
 
 function get_sorts() {
     $.ajax({
-        url: "/get_sorts/",
+        url: abspath("get_sorts"),
         dataType: "json"
     }).done(function(data,status,jqxhr) {
 
@@ -560,7 +578,7 @@ function get_sorts() {
 
 function solve() {
     $.ajax({
-        url: "/solve/",
+        url: abspath("solve"),
         type: "POST",
         data: graph.json(),
         contentType: "application/json",
