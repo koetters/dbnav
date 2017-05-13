@@ -171,6 +171,7 @@ Graph.prototype = {
     remove_coreference: function(nodeId1,nodeId2) {
         delete this.nodes[nodeId1].corefs[nodeId2];
         delete this.nodes[nodeId2].corefs[nodeId1];
+        this.cleanup();
     },
 
     set_pos: function(nodeId,x,y) {

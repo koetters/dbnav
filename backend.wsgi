@@ -2,13 +2,22 @@ import re
 import os
 import json
 import mysql.connector
+import sqlite3
+
+def dbinfo():
+    cnx = sqlite3.connect("db.sqlite")
+    cursor = cnx.cursor()
+    cursor.execute("SELECT * FROM connection")
+
+    header = [ t[0] for t in cursor.description ]
+    row = cursor.fetchone()
+
+    cursor.close()
+    cnx.close()
+
+    return dict(zip(header,row))
 
 def _solve(data):
-
-    user = "root"
-    password = "password"
-    host = "localhost"
-    database = "literature_pcf"
 
     graph = json.loads(data)
     if not graph:
@@ -29,11 +38,12 @@ def _solve(data):
     def inv_name(str):
         return str[1:].replace("_","#")
 
-    cnx = mysql.connector.connect(user=user,password=password,host=host,database=database)
+    info = dbinfo()
+    cnx = mysql.connector.connect(**info)
     cursor = cnx.cursor()
 
     sql0 = "SELECT table_name,column_name FROM information_schema.columns "\
-           "WHERE table_schema='{0}' AND column_name NOT RLIKE '^(p[0-9]*|id)$'".format(database)
+           "WHERE table_schema='{0}' AND column_name NOT RLIKE '^(p[0-9]*|id)$'".format(info["database"])
     cursor.execute(sql0)
     rows = cursor.fetchall()
 
@@ -120,16 +130,12 @@ def _solve(data):
 
 def _get_sorts():
 
-    user = "root"
-    password = "password"
-    host = "localhost"
-    database = "literature_pcf"
-
-    cnx = mysql.connector.connect(user=user,password=password,host=host,database=database)
+    info = dbinfo()
+    cnx = mysql.connector.connect(**info)
     cursor = cnx.cursor()
 
     sql0 = "SELECT table_name,column_name FROM information_schema.columns "\
-           "WHERE table_schema='{0}' AND column_name='id'".format(database)
+           "WHERE table_schema='{0}' AND column_name='id'".format(info["database"])
     cursor.execute(sql0)
     rows = cursor.fetchall()
     sorts = [t[0] for t in rows]
