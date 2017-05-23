@@ -4,6 +4,17 @@
 <meta charset="utf-8"/>
 <title>pcfsearch</title>
 <style>
+a {
+    text-decoration: none;
+    color: white;
+    padding: 6px;
+    cursor: default;
+}
+
+a:hover,a.selected {
+    background: gray;
+}
+
 ul {
     list-style-type: none;
     margin: 0;
@@ -18,8 +29,17 @@ th {
     background: #ccc;
 }
 
+tr.selected td {
+    background: yellow;
+}
+
+tr.editable td {
+    background: green;
+}
+
 td {
     background: white;
+    cursor: default;
 }
 
 button {
@@ -30,6 +50,16 @@ button {
     border: 1px outset #aaaaaa;
     color: black;
     cursor: inherit;
+}
+
+button.icon {
+    padding: 0px;
+    border-radius: initial;
+    width: 20px;
+}
+
+button.icon:hover {
+    background: gray;
 }
 
 button.def {
@@ -59,7 +89,7 @@ button.down {
     font-style: italic;
 }
 
-button:hover {
+button.attribute:hover, button.role:hover {
     border: 1px solid black;
 }
 
@@ -85,6 +115,15 @@ text {
     pointer-events: none;
 }
 
+.table_box {
+    margin: 2px;
+    background: blue;
+}
+
+.table_box.editable {
+    background: green;
+}
+
 .options {
     display: flex;
     flex-wrap: wrap;
@@ -99,6 +138,8 @@ text {
 </script>
 <script>
 queue = [];
+edit_mode = false;
+box_edit_mode = false;
 
 function abspath(url) {
 
@@ -559,6 +600,607 @@ function toggle_coreference() {
 
 }
 
+function get_scales() {
+    $.ajax({
+        url: abspath("get_scales"),
+        dataType: "json"
+    }).done(function(data,status,jqxhr) {
+
+        var tbody = $("<tbody>").attr("id","scales");
+        $.each(data,function(index,row){
+            var id = row[0];
+            var name = row[1];
+            var arity = row[2];
+            var tr = $("<tr>").attr("data-id",id)
+                              .on("click",select_scale)
+                              .on("dblclick",edit_scale);
+            var td1 = $("<td>").text(name);
+            var td2 = $("<td>").text(arity);
+            tr.append(td1).append(td2);
+            tbody.append(tr);
+        });
+        $("tbody#scales").replaceWith(tbody);
+        tbody.find("tr:first").trigger("click");
+    });
+}
+
+function select_scale() {
+
+    if(edit_mode) { return; }
+
+    var $this = $(this);
+    if($this.hasClass("selected")) {
+        return;
+    } else {
+        $this.siblings().removeClass("selected");
+        $this.addClass("selected");
+    }
+
+    var id = $(this).data("id");
+    $.ajax({
+        url: abspath("describe_scale"),
+        data: { "id":id },
+        dataType: "json",
+    }).done(function(data,status,jqxhr) {
+
+        var $tbody = $("<tbody>").attr("id","attributes")
+                                 .attr("data-scale",id);
+        $.each(data,function(index,row){
+            var tr = $("<tr>").on("click",select_attribute)
+                              .on("dblclick",edit_attribute)
+                              .attr("data-id",row[0]);
+            var td1 = $("<td>").text(row[1]);
+            var td2 = $("<td>").text(row[2]);
+            tr.append(td1).append(td2);
+            $tbody.append(tr);
+        });
+        $("tbody#attributes").replaceWith($tbody);
+    });
+}
+
+function select_attribute() {
+
+    if(edit_mode) { return; }
+
+    var $this = $(this);
+    if($this.hasClass("selected")) {
+        $this.removeClass("selected");
+    } else {
+        $this.siblings().removeClass("selected");
+        $this.addClass("selected");
+    }
+}
+
+function edit_scale() {
+
+    var $this = $(this);
+    var id = $this.data("id");
+    if($this.hasClass("editable")) {
+
+        var row = $this.find("td").map(function(index,td) {
+            return $(td).text().trim();
+        }).get();
+
+        var name = row[0];
+        var arity = row[1];
+
+        if(name == "" || !(/^[1-9]$/.test(arity))) {
+            return;
+        }
+
+        $this.find("td").attr("contenteditable","false");
+        $.ajax({
+            url: abspath("write_scale"),
+            type: "POST",
+            data: JSON.stringify({
+                "id": id,
+                "name": name,
+                "arity": arity,
+            }),
+            contentType: "application/json",
+        }).done(function(insertId,status,jqxhr) {
+            if(id == "") { $this.data("id",insertId); }
+            $this.removeClass("editable");
+            edit_mode = false;
+            $this.trigger("click");
+        });
+    } else if(edit_mode) {
+        return;
+    } else {
+        edit_mode = true;
+        $this.find("td").attr("contenteditable","true");
+        $this.addClass("editable");
+    }
+}
+
+function delete_scale() {
+
+    if(edit_mode) { return; }
+
+    var $this = $(this);
+    var id = $("tbody#scales tr.selected").first().data("id");
+
+    $.ajax({
+        url: abspath("delete_scale"),
+        type: "POST",
+        data: JSON.stringify(id),
+        contentType: "application/json",
+    }).done(function(data,status,jqxhr) {
+        get_scales();
+    });
+}
+
+function delete_binding() {
+
+    if(edit_mode) { return; }
+
+    var $this = $(this);
+    var id = $("tbody#bindings tr.selected").first().data("id");
+
+    $.ajax({
+        url: abspath("delete_binding"),
+        type: "POST",
+        data: JSON.stringify(id),
+        contentType: "application/json",
+    }).done(function(data,status,jqxhr) {
+        get_bindings();
+    });
+}
+
+function delete_attribute() {
+
+    if(edit_mode) { return; }
+
+    var $this = $(this);
+    var $row = $("tbody#attributes tr.selected").first();
+
+    if($row.length != 0) {
+        var id = $row.data("id");
+        $.ajax({
+            url: abspath("delete_attribute"),
+            type: "POST",
+            data: JSON.stringify(id),
+            contentType: "application/json",
+        }).done(function(data,status,jqxhr) {
+            $row.remove();
+        });
+    }
+}
+
+function create_attribute() {
+
+    if(edit_mode) { return; }
+
+    var tr = $("<tr>").addClass("editable");
+    var td1 = $("<td>").attr("contenteditable","true");
+    var td2 = $("<td>").attr("contenteditable","true");
+    tr.append(td1)
+      .append(td2)
+      .on("click",select_attribute)
+      .on("dblclick",edit_attribute)
+      .attr("data-id","");
+    var tbody = $("tbody#attributes")
+    tbody.append(tr);
+    tr.find("td:first").focus()
+}
+
+function edit_attribute() {
+
+    var $this = $(this);
+    var id = $this.data("id");
+    var scaleId = $this.parent("tbody").data("scale");
+
+    if($this.hasClass("editable")) {
+
+        var row = $this.find("td").map(function(index,td) {
+            return $(td).text().trim();
+        }).get();
+
+        var name = row[0];
+        var sqldef = row[1];
+
+        if(name == "" || sqldef == "") {
+            return;
+        }
+
+        $this.find("td").attr("contenteditable","false");
+        $.ajax({
+            url: abspath("write_attribute"),
+            data: {
+                "id": id,
+                "scale": scaleId,
+                "name": name,
+                "sqldef": sqldef,
+            },
+        }).done(function(insertId,status,jqxhr) {
+            if(id == "") { $this.data("id",insertId); }
+            $this.removeClass("editable");
+            edit_mode = false;
+        });
+    } else if(edit_mode) {
+        return;
+    } else {
+        edit_mode = true;
+        $this.find("td").attr("contenteditable","true");
+        $this.addClass("editable");
+    }
+}
+
+function get_bindings() {
+    $.ajax({
+        url: abspath("get_bindings"),
+        dataType: "json"
+    }).done(function(data,status,jqxhr){
+
+        var tbody = $("<tbody>").attr("id","bindings");
+        $.each(data,function(index,row) {
+            var id = row[0];
+            var name = row[1];
+            var host = row[2];
+            var database = row[3];
+
+            var tr = $("<tr>").attr("data-id",id)
+                              .on("click",select_binding)
+                              .on("dblclick",edit_binding);
+            var td1 = $("<td>").text(host);
+            var td2 = $("<td>").text(database);
+            var td3 = $("<td>").text(name);
+            tr.append(td1).append(td2).append(td3);
+            tbody.append(tr);
+        });
+        $("tbody#bindings").replaceWith(tbody);
+        tbody.find("tr:first").trigger("click");
+    });
+}
+
+function select_binding() {
+
+    if(edit_mode) { return; }
+
+    var $this = $(this);
+    var id = $this.data("id");
+
+    if($this.hasClass("selected")) {
+       return;
+    } else {
+        $this.siblings().removeClass("selected");
+        $("#bound_scales").data("binding",id)
+                          .empty();
+        $this.addClass("selected");
+    }
+
+    $.ajax({
+        url: abspath("describe_binding"),
+        data: { "id":id },
+        dataType: "json",
+    }).done(function(data,status,jqxhr) {
+
+        $.each(data,function(boundScaleId,boundScale) {
+            var html = $("template#table_box").html();
+            var box = $(html);
+            box.on("dblclick",edit_binding_box)
+               .attr("data-id",boundScaleId)
+               .attr("data-scale",boundScale["scale"])
+               .find(".title")
+               .text(boundScale["name"]);
+            box.find(".js-delete_binding_box").on("click",delete_binding_box);
+            tbody = box.find("tbody");
+            $.each(boundScale["bindings"],function(index,pair) {
+                var tr = $("<tr>");
+                var td1 = $("<td>").text(pair[0]);
+                var td2 = $("<td>").text(pair[1]);
+                tr.append(td1).append(td2);
+                tbody.append(tr);
+            });
+            $("#bound_scales").append(box);
+        });
+    });
+
+    var row = $this.find("td").map(function(index,td) {
+        return $(td).text().trim();
+    }).get();
+
+    var host = row[0];
+    var database = row[1];
+
+    var tbody2 = $("<tbody>").attr("id","columns");
+    $("tbody#columns").replaceWith(tbody2);
+
+    $.ajax({
+        url: abspath("get_columns"),
+        data: {
+            "binding": id,
+            "host": host,
+            "database": database,
+        },
+        dataType: "json",
+    }).done(function(data,status,jqxhr) {
+
+        $.each(data,function(index,row) {
+            var table_name = row[0];
+            var column_name = row[1];
+            var output_column = row[2];
+
+            var tr = $("<tr>").on("click",select_column);
+            var td1 = $("<td>").text(table_name);
+            var td2 = $("<td>").text(column_name);
+            tr.append(td1).append(td2);
+            if(output_column) {
+                tr.addClass("selected");
+            }
+
+            tbody2.append(tr);
+        });
+    });
+}
+
+function create_scale() {
+
+    if(edit_mode) { return; }
+
+    var tr = $("<tr>");
+    var td1 = $("<td>").attr("contenteditable","true");
+    var td2 = $("<td>").attr("contenteditable","true");
+
+    tr.append(td1)
+      .append(td2)
+      .on("click",select_scale)
+      .on("dblclick",edit_scale)
+      .attr("data-id","");
+
+    var tbody = $("tbody#scales")
+    tbody.append(tr);
+    tr.siblings().removeClass("selected");
+
+    var tbody2 = $("<tbody>").attr("id","attributes")
+                             .attr("data-scale","");
+    $("tbody#attributes").replaceWith(tbody2);
+
+    tr.trigger("dblclick");
+    tr.find("td:first").focus();
+}
+
+function create_binding() {
+
+    if(edit_mode) { return; }
+
+    var tr = $("<tr>");
+    var td1 = $("<td>").attr("contenteditable","true");
+    var td2 = $("<td>").attr("contenteditable","true");
+    var td3 = $("<td>").attr("contenteditable","true");
+
+    tr.append(td1)
+      .append(td2)
+      .append(td3)
+      .attr("data-id","")
+      .on("click",select_binding)
+      .on("dblclick",edit_binding);
+
+    var tbody = $("tbody#bindings")
+    tbody.append(tr);
+    tr.siblings().removeClass("selected");
+
+    var tbody2 = $("<tbody>").attr("id","columns");
+    $("tbody#columns").replaceWith(tbody2);
+
+    $("#bound_scales").data("binding","")
+                      .empty();
+
+    tr.trigger("dblclick");
+    tr.find("td:first").focus();
+}
+
+function edit_binding() {
+
+    var $this = $(this);
+    var id = $this.data("id");
+    if($this.hasClass("editable")) {
+
+        var row = $this.find("td").map(function(index,td) {
+            return $(td).text().trim();
+        }).get();
+
+        var host = row[0];
+        var database = row[1];
+        var binding = row[2];
+
+        if(host == "" || database == "" || row == "") {
+            return;
+        }
+
+        $this.find("td").attr("contenteditable","false");
+        $.ajax({
+            url: abspath("write_binding"),
+            data: {
+                "id": id,
+                "name": binding,
+                "host": host,
+                "database": database,
+            },
+        }).done(function(insertId,status,jqxhr) {
+            if(id == "") { $this.data("id",insertId); }
+            $this.removeClass("editable");
+            edit_mode = false;
+            $this.trigger("click");
+        });
+    } else if(edit_mode) {
+        return;
+    } else {
+        edit_mode = true;
+        $this.addClass("editable");
+        $this.find("td").attr("contenteditable","true");
+    }
+}
+
+function create_binding_box() {
+
+    if(box_edit_mode) { return; }
+
+    var $this = $(this);
+    var scaleId = $this.data("id");
+    var arity = $this.data("arity");
+
+    var html = $("template#table_box").html();
+    var $box = $(html);
+    var $titlebar = $box.find(".title")
+                        .attr("contenteditable","true");
+    var $tbody = $box.find("tbody");
+
+    $box.attr("data-id","")
+        .attr("data-scale",scaleId)
+        .on("dblclick",edit_binding_box)
+        .find(".js-delete_binding_box").on("click",delete_binding_box)
+
+    for(var i=0;i<arity;++i) {
+        var tr = $("<tr>");
+        var td1 = $("<td>").text(i);
+        var td2 = $("<td>").text("");
+        tr.append(td1).append(td2);
+        $tbody.append(tr);
+    }
+    $("#bound_scales").prepend($box);
+    $box.trigger("dblclick")
+}
+
+function edit_binding_box() {
+
+    var $this = $(this);
+    var $box = $this.closest(".table_box");
+    var $frame = $this.closest("#bound_scales");
+    var $titlebar = $box.find(".title");
+    var $tbody = $box.find("tbody");
+
+    var id = $box.data("id");
+    var scaleId = $box.data("scale");
+    var bindingId = $frame.data("binding");
+
+    if($box.hasClass("editable")) {
+        var name = $titlebar.text().trim();
+        if(name == "") { return; }
+        var bindings = {};
+        $tbody.find("tr").each(function(i,tr) {
+            row = $(tr).find("td").map(function(j,td) {
+                    return $(td).text().trim();
+                }).get();
+            bindings[row[0]] = row[1];
+        });
+
+        for(var arg in bindings) {
+            if(bindings[arg] == "") { return; }
+        }
+
+        $titlebar.attr("contenteditable","false");
+        $.ajax({
+            url: abspath("write_bound_scale"),
+            type: "POST",
+            data: JSON.stringify({
+                "id": id,
+                "name": name,
+                "scaleId": scaleId,
+                "bindingId": bindingId,
+                "bindings": bindings,
+            }),
+            contentType: "application/json",
+        }).done(function(insertId,status,jqxhr) {
+            if(id == "") { $this.data("id",insertId); }
+            $box.removeClass("editable");
+            box_edit_mode = false;
+        });
+    } else if(box_edit_mode) {
+        return;
+    } else {
+        box_edit_mode = true;
+        $box.addClass("editable");
+        $titlebar.attr("contenteditable","true");
+    }
+}
+
+function delete_binding_box() {
+
+    if(box_edit_mode) { return; }
+
+    var $this = $(this);
+    var $box = $this.closest(".table_box");
+    var id = $box.data("id");
+
+    $.ajax({
+        url: abspath("delete_bound_scale"),
+        type: "POST",
+        data: JSON.stringify(id),
+        contentType: "application/json",
+    }).done(function(data,status,jqxhr) {
+        $box.remove()
+    });
+}
+
+function select_column() {
+    var $this = $(this);
+
+    var row = $this.find("td").map(function(index,td) {
+        return $(td).text().trim();
+    }).get();
+
+    var bindingId = $("#bound_scales").data("binding");
+    var table = row[0];
+    var column = row[1];
+
+    if(box_edit_mode) {
+        $("#bound_scales .editable tbody td:empty").first().text(table+"."+column)
+    } else {
+        if($this.hasClass("selected")) {
+            $.ajax({
+                url: abspath("remove_output_column"),
+                type: "POST",
+                data: JSON.stringify({
+                    "binding": bindingId,
+                    "table": table,
+                    "column": column,
+                }),
+                contentType: "application/json",
+            }).done(function(data,status,jqxhr) {
+                $this.removeClass("selected");
+            });
+        } else {
+            $.ajax({
+                url: abspath("add_output_column"),
+                type: "POST",
+                data: JSON.stringify({
+                    "binding": bindingId,
+                    "table": table,
+                    "column": column,
+                }),
+                contentType: "application/json",
+            }).done(function(data,status,jqxhr) {
+                $this.addClass("selected");
+            });
+        }
+    }
+}
+
+function get_scales_2() {
+
+    $.ajax({
+        url: abspath("get_scales"),
+        dataType: "json",
+    }).done(function(data,status,jqxhr) {
+
+        var tbody = $("<tbody>").attr("id","scales");
+        $.each(data,function(index,row){
+            var id = row[0];
+            var name = row[1];
+            var arity = row[2];
+            var tr = $("<tr>").attr("data-id",id)
+                              .attr("data-arity",arity)
+                              .on("click",create_binding_box);
+            var td1 = $("<td>").text(name);
+            var td2 = $("<td>").text(arity);
+            tr.append(td1).append(td2);
+            tbody.append(tr);
+        });
+        $("tbody#scales").replaceWith(tbody);
+    });
+}
+
 function get_sorts() {
     $.ajax({
         url: abspath("get_sorts"),
@@ -678,28 +1320,184 @@ function place_node(e) {
     }
 }
 
-$(document).ready(function(){
-    get_sorts();
-    $("svg").on("click",place_node);
+function set_content(e) {
+    var $this = $(this);
+    var page = $this.data("content");
 
+    var html = $("template#"+page).html();
+    $("main").replaceWith($(html));
+
+    if(page === "page1") {
+        edit_mode = false;
+        get_scales();
+        $(".js-create_scale").on("click",create_scale);
+        $(".js-delete-scale").on("click",delete_scale);
+        $(".js-create_attribute").on("click",create_attribute);
+        $(".js-delete_attribute").on("click",delete_attribute);
+    } else if(page === "page2") {
+        edit_mode = false;
+        get_bindings();
+        get_scales_2();
+        $(".js-create_binding").on("click",create_binding);
+        $(".js-delete_binding").on("click",delete_binding);
+    } else if(page === "page3") {
+        queue = [];
+        edit_mode = false;
+        get_sorts();
+        $("svg").on("click",place_node);
+    }
+
+    $("a.nav").removeClass("selected");
+    $("#"+"ref_"+page).addClass("selected");
+}
+
+$(document).ready(function(){
+    $("a.nav").on("click",set_content);
+    $("#ref_page2").trigger("click");
 });
 
 </script>
 </head>
-<body style="height:100vh;margin:0px;">
-    <main style="height:100%;">
-        <section style="display:flex;height:50%;">
-            <section style="background:gray;width:25%;">
-                <div id="sortsView"></div>
-                <div id="optionsView"></div>
+<body style="height:100vh;margin:0px;display:flex;flex-direction:column;">
+    <header style="display:flex;background:black;">
+        <a id="ref_page1" class="nav" data-content="page1">Scales</a>
+        <a id="ref_page2" class="nav" data-content="page2">Bindings</a>
+        <a id="ref_page3" class="nav" data-content="page3">Navigation</a>
+    </header>
+    <template id="table_box">
+        <div class="table_box">
+            <div style="background:black;color:white;font-weight:bold;display:flex;padding:5px;">
+                <div style="flex-basis:20%;"></div>
+                <div class="title" style="flex-grow:1;text-align:center;"></div>
+                <div style="flex-basis:20%;text-align:right;">
+                    <button class="icon js-delete_binding_box">x</button>
+                </div>
+            </div>
+            <table style="margin:5px;">
+                <thead>
+                    <tr><th style="width:100px;">Parameter</th><th style="width:200px;">Column</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </template>
+    <template id="page1">
+        <main style="height:100%;display:flex;">
+            <section style="width:50%;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+                <div style="background:blue;margin:2px;">
+                    <div style="background:black;color:white;font-weight:bold;display:flex;padding:5px;">
+                        <div style="flex-basis:20%;"></div>
+                        <div style="flex-grow:1;text-align:center;">Conceptual Scales</div>
+                        <div style="flex-basis:20%;text-align:right;">
+                            <button class="icon js-create_scale">&plus;</button>
+                            <button class="icon js-delete-scale">&minus;</button>
+                        </div>
+                    </div>
+                    <table style="margin:5px;">
+                        <thead>
+                            <tr><th style="width:200px;">Name</th><th style="width:100px;">Arity</th></tr>
+                        </thead>
+                        <tbody id="scales"></tbody>
+                    </table>
+                </div>
             </section>
-            <svg style="background:white;width:75%;">
-                <g></g>
-            </svg>
-        </section>
-        <section style="background:blue;height:50%;overflow:auto;">
-            <table id="resultTable"></table>
-        </section>
+            <section style="width:50%;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+                <div style="background:blue;margin:2px;">
+                    <div style="background:black;color:white;font-weight:bold;display:flex;padding:5px;">
+                        <div style="flex-basis:20%;"></div>
+                        <div style="flex-grow:1;text-align:center;">Attributes</div>
+                        <div style="flex-basis:20%;text-align:right;">
+                            <button class="icon js-create_attribute">&plus;</button>
+                            <button class="icon js-delete_attribute">&minus;</button>
+                        </div>
+                    </div>
+                    <table style="margin:5px;">
+                        <thead>
+                            <tr><th style="width:100px;">Attribute</th><th style="width:400px;">SQL Definition</th></tr>
+                        </thead>
+                        <tbody id="attributes"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </template>
+    <template id="page2">
+        <main style="height:100%;display:flex;">
+            <section style="width:33%;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+                <div style="background:blue;margin:2px;">
+                    <div style="background:black;color:white;font-weight:bold;display:flex;padding:5px;">
+                        <div style="flex-basis:20%;"></div>
+                        <div style="flex-grow:1;text-align:center;">Bindings</div>
+                        <div style="flex-basis:20%;text-align:right;">
+                            <button class="icon js-create_binding">&plus;</button>
+                            <button class="icon js-delete_binding">&minus;</button>
+                        </div>
+                    </div>
+                    <table style="margin:5px;">
+                        <thead>
+                            <tr><th style="width:100px;">Host</th><th style="width:100px;">Database</th><th style="width:100px;">Binding</th></tr>
+                        </thead>
+                        <tbody id="bindings"></tbody>
+                    </table>
+                </div>
+                <div style="background:blue;margin:2px;">
+                    <div style="background:black;color:white;font-weight:bold;display:flex;padding:5px;">
+                        <div style="flex-basis:20%;"></div>
+                        <div style="flex-grow:1;text-align:center;">Conceptual Scales</div>
+                        <div style="flex-basis:20%;text-align:right;"></div>
+                    </div>
+                    <table style="margin:5px;">
+                        <thead>
+                            <tr><th style="width:200px;">Name</th><th style="width:100px;">Arity</th></tr>
+                        </thead>
+                        <tbody id="scales"></tbody>
+                    </table>
+                </div>
+            </section>
+            <section style="height:100%;width:33%;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+                <div style="background:blue;margin:2px;">
+                    <div style="background:black;color:white;font-weight:bold;display:flex;padding:5px;">
+                        <div style="flex-basis:20%;"></div>
+                        <div style="flex-grow:1;text-align:center;">Columns</div>
+                        <div style="flex-basis:20%;text-align:right;"></div>
+                    </div>
+                    <table style="margin:5px;">
+                        <thead>
+                            <tr><th style="width:200px;">Table</th><th style="width:200px;">Column</th></tr>
+                        </thead>
+                        <tbody id="columns"></tbody>
+                    </table>
+                </div>
+            </section>
+            <section style="height:100%;width:33%;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+                <div style="height:70%;width:90%;">
+                    <div style="background:black;color:white;font-weight:bold;display:flex;padding:5px;">
+                        <div style="flex-basis:20%;"></div>
+                        <div style="flex-grow:1;text-align:center;">Bound Scales</div>
+                        <div style="flex-basis:20%;text-align:right;"></div>
+                    </div>
+                    <div id="bound_scales" style="padding:5px;height:100%;background:gray;overflow:auto;"></div>
+                </div>
+            </section>
+        </main>
+    </template>
+    <template id="page3">
+        <main style="height:100%;display:flex;flex-direction:column;">
+            <section style="display:flex;height:50%;">
+                <section style="background:gray;width:25%;">
+                    <div id="sortsView"></div>
+                    <div id="optionsView"></div>
+                </section>
+                <svg style="background:white;width:75%;">
+                    <g></g>
+                </svg>
+            </section>
+            <section style="background:blue;height:50%;overflow:auto;">
+                <table id="resultTable"></table>
+            </section>
+        </main>
+    </template>
+    <main style="height:100%;">
     </main>
 </body>
 </html>

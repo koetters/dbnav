@@ -1,9 +1,10 @@
 import re
 import os
 import json
+import cgi
+import sqlite3
 import mysql.connector
 from itertools import izip
-import sqlite3
 
 class UnaryScale(object):
 
@@ -103,6 +104,9 @@ output = {
 
 def out(t,sort):
     return output[sort].format(t)
+
+def get_login():
+    return ("dbnav","dbnav")
 
 def dbinfo():
     basedir = os.path.dirname(os.path.realpath(__file__))
@@ -212,7 +216,41 @@ def _solve(data):
             options.setdefault(nodeId,{}).setdefault(prefix,[]).append(entry)
 
     response = json.dumps(dict(header=header,result=rows,options=options,equalities=equalities))
-    return(response)
+    return response
+
+def _get_columns(bindingId,host,database):
+
+    cnx = None
+    cursor = None
+    rows = []
+
+    try:
+        user,password = get_login()
+        cnx = mysql.connector.connect(user=user,password=password,host=host,database="information_schema")
+        cursor = cnx.cursor()
+        cursor.execute("SELECT table_name,column_name FROM columns WHERE table_schema=%(db)s",dict(db=database))
+        rows = cursor.fetchall()
+
+    except mysql.connector.InterfaceError:
+        return json.dumps([])
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if cnx is not None:
+            cnx.close()
+
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
+    cursor = cnx.cursor()
+    cursor.execute("SELECT table_name,column_name FROM BindingOutput WHERE binding=?",bindingId)
+    output_columns = cursor.fetchall()
+
+    cursor.close()
+    cnx.close()
+
+    rows = [ (table,column,(table,column) in output_columns) for table,column in rows ]
+    return json.dumps(rows)
 
 def _get_sorts():
 
@@ -228,6 +266,243 @@ def _get_sorts():
 
     return json.dumps(sorts)
 
+def _get_scales():
+
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
+    cursor = cnx.cursor()
+    cursor.execute("SELECT id,name,arity FROM Scale")
+    rows = cursor.fetchall()
+
+    cursor.close()
+    cnx.close()
+
+    return json.dumps(rows)
+
+def _describe_scale(id):
+
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
+    cursor = cnx.cursor()
+
+    cursor.execute("SELECT m.id,m.name,m.sqldef FROM Scale AS K,ScaleAttribute AS m WHERE K.id = '{0}' AND m.scale = K.id".format(id))
+    rows = cursor.fetchall()
+
+    cursor.close()
+    cnx.close()
+
+    response = json.dumps(rows)
+    return response
+
+
+def _get_bindings():
+
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
+    cursor = cnx.cursor()
+    cursor.execute("SELECT id,name,host,database FROM Binding")
+    rows = cursor.fetchall()
+
+    cursor.close()
+    cnx.close()
+
+    return json.dumps(rows)
+
+def _describe_binding(id):
+
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
+    cursor = cnx.cursor()
+    query = "SELECT K.id,K.name,K.scale,y.arg,y.column FROM BoundScale AS K, BoundScaleArg AS y WHERE K.binding='{0}' AND K.id=y.bound_scale".format(id)
+    cursor.execute(query)
+    rows = cursor.fetchall()
+
+    cursor.close()
+    cnx.close()
+
+    bound_scales = {}
+    for row in rows:
+        bound_scales.setdefault(row[0],{"name":row[1],"scale":row[2],"bindings":[]})["bindings"].append([row[3],row[4]])
+
+    return json.dumps(bound_scales)
+
+def _write_bound_scale(data):
+    bound_scale = json.loads(data)
+    id = bound_scale["id"]
+    name = bound_scale["name"]
+    scaleId = bound_scale["scaleId"]
+    bindingId = bound_scale["bindingId"]
+    bindings = bound_scale["bindings"]
+
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
+    cursor = cnx.cursor()
+
+    if id == "":
+        cursor.execute("INSERT INTO BoundScale (name,scale,binding) VALUES (?,?,?)",(name,scaleId,bindingId))
+        cursor.execute("SELECT last_insert_rowid()")
+        id = cursor.fetchone()[0]
+        values = [ (id,arg,column) for arg,column in bindings.items() ]
+        cursor.executemany("INSERT INTO BoundScaleArg (bound_scale,arg,column) VALUES (?,?,?)",values)
+    else:
+        cursor.execute("UPDATE BoundScale SET name=? WHERE id=?",(name,id))
+        for arg,column in bindings.items():
+            cursor.execute("UPDATE BoundScaleArg SET column=? WHERE bound_scale=? AND arg=?",(column,id,arg))
+
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+
+    return json.dumps(id)
+
+def _write_scale(data):
+    scale = json.loads(data)
+    id = scale["id"]
+    name = scale["name"]
+    arity = scale["arity"]
+
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
+    cursor = cnx.cursor()
+
+    if id == "":
+        cursor.execute("INSERT INTO Scale (name,arity) VALUES (?,?)",(name,arity))
+        cursor.execute("SELECT last_insert_rowid()")
+        id = cursor.fetchone()[0]
+    else:
+        cursor.execute("UPDATE Scale SET name=?,arity=? WHERE id=?",(name,arity,id))
+
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+
+    return json.dumps(id)
+
+def _write_binding(name,host,database,id=""):
+
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
+    cursor = cnx.cursor()
+
+    if id == "":
+        cursor.execute("INSERT INTO Binding (name,host,database) VALUES (?,?,?)",(name,host,database))
+        cursor.execute("SELECT last_insert_rowid()")
+        id = cursor.fetchone()[0]
+    else:
+        cursor.execute("UPDATE Binding SET name=?,host=?,database=? WHERE id=?",(name,host,database,id))
+
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+
+    return json.dumps(id)
+
+def _delete_scale(data):
+
+    id = str(json.loads(data))
+
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
+    cursor = cnx.cursor()
+    cnx.execute("DELETE FROM Scale WHERE id=?",id)
+    cnx.execute("DELETE FROM ScaleAttribute WHERE scale=?",id)
+
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+
+def _delete_attribute(data):
+
+    id = str(json.loads(data))
+
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
+    cursor = cnx.cursor()
+    cnx.execute("DELETE FROM ScaleAttribute WHERE id=?",id)
+
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+
+def _delete_binding(data):
+
+    id = str(json.loads(data))
+
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
+    cursor = cnx.cursor()
+    cnx.execute("DELETE FROM Binding WHERE id=?",id)
+    cnx.execute("DELETE FROM BoundScaleArg WHERE bound_scale IN (SELECT id FROM BoundScale WHERE binding=?)",id)
+    cnx.execute("DELETE FROM BoundScale WHERE binding=?",id)
+    cnx.execute("DELETE FROM BindingOutput WHERE binding=?",id)
+
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+
+def _delete_bound_scale(data):
+
+    id = str(json.loads(data))
+
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
+    cursor = cnx.cursor()
+    cnx.execute("DELETE FROM BoundScale WHERE id=?",id)
+    cnx.execute("DELETE FROM BoundScaleArg WHERE bound_scale=?",id)
+
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+
+def _write_attribute(scale,name,sqldef,id=""):
+
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
+    cursor = cnx.cursor()
+
+    if id == "":
+        cursor.execute("INSERT INTO ScaleAttribute (scale,name,sqldef) VALUES (?,?,?)",(scale,name,sqldef))
+        cursor.execute("SELECT last_insert_rowid()")
+        id = cursor.fetchone()[0]
+    else:
+        cursor.execute("UPDATE ScaleAttribute SET name=?,sqldef=? WHERE id=?",(name,sqldef,id))
+
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+
+    return json.dumps(id)
+
+def _add_output_column(data):
+    output_column = json.loads(data)
+    binding = output_column["binding"]
+    table = output_column["table"]
+    column = output_column["column"]
+
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
+    cursor = cnx.cursor()
+    cursor.execute("INSERT INTO BindingOutput (binding,table_name,column_name) VALUES (?,?,?)",(binding,table,column))
+    cnx.commit()
+
+    cursor.close()
+    cnx.close()
+
+def _remove_output_column(data):
+    output_column = json.loads(data)
+    binding = output_column["binding"]
+    table = output_column["table"]
+    column = output_column["column"]
+
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
+    cursor = cnx.cursor()
+    cursor.execute("DELETE FROM BindingOutput WHERE binding=? AND table_name=? AND column_name=?",(binding,table,column))
+    cnx.commit()
+
+    cursor.close()
+    cnx.close()
+
 def index(environ,start_response):
 
     basedir = os.path.dirname(os.path.realpath(__file__))
@@ -238,13 +513,23 @@ def index(environ,start_response):
     start_response("200 OK",[("Content-type","text/html")])
     return [content]
 
-def solve(environ,start_response):
+def get_columns(environ,start_response):
 
-    n = int(environ.get("CONTENT_LENGTH",0))
+    params = cgi.parse_qs(environ["QUERY_STRING"])
+    bindingId = cgi.escape(params["binding"][0])
+    host = cgi.escape(params["host"][0])
+    database = cgi.escape(params["database"][0])
 
     status = "200 OK"
-    # output = ["%s: %s" % (key,value) for key,value in sorted(environ.items())]
-    # output = "\n".join(output)
+    output = _get_columns(bindingId,host,database)
+    headers = [("Content-type","application/json"),("Content-Length",str(len(output)))]
+    start_response(status,headers)
+    return [output]
+
+def solve(environ,start_response):
+
+    status = "200 OK"
+    n = int(environ.get("CONTENT_LENGTH",0))
     data = environ['wsgi.input'].read(n)
     output = _solve(data)
     headers = [("Content-type","application/json"),("Content-Length",str(len(output)))]
@@ -258,14 +543,154 @@ def get_sorts(environ,start_response):
     start_response(status,headers)
     return [output]
 
+def get_scales(environ,start_response):
+    status = "200 OK"
+    output = _get_scales()
+    headers = [("Content-type","application/json"),("Content-Length",str(len(output)))]
+    start_response(status,headers)
+    return [output]
+
+def describe_scale(environ,start_response):
+
+    params = cgi.parse_qs(environ["QUERY_STRING"])
+    id = cgi.escape(params["id"][0])
+
+    status = "200 OK"
+    output = _describe_scale(id)
+    headers = [("Content-type","application/json"),("Content-Length",str(len(output)))]
+    start_response(status,headers)
+    return [output]
+
+def write_scale(environ,start_response):
+
+    n = int(environ.get("CONTENT_LENGTH",0))
+    data = environ['wsgi.input'].read(n)
+    output = _write_scale(data)
+    start_response("200 OK",[("Content-type","text/plain")])
+    return [output]
+
+def delete_scale(environ,start_response):
+
+    n = int(environ.get("CONTENT_LENGTH",0))
+    data = environ['wsgi.input'].read(n)
+    _delete_scale(data)
+    start_response("200 OK",[("Content-type","text/plain")])
+    return ["Success"]
+
+def delete_attribute(environ,start_response):
+
+    n = int(environ.get("CONTENT_LENGTH",0))
+    data = environ['wsgi.input'].read(n)
+    _delete_attribute(data)
+    start_response("200 OK",[("Content-type","text/plain")])
+    return ["Success"]
+
+def delete_binding(environ,start_response):
+
+    n = int(environ.get("CONTENT_LENGTH",0))
+    data = environ['wsgi.input'].read(n)
+    _delete_binding(data)
+    start_response("200 OK",[("Content-type","text/plain")])
+    return ["Success"]
+
+def delete_bound_scale(environ,start_response):
+
+    n = int(environ.get("CONTENT_LENGTH",0))
+    data = environ['wsgi.input'].read(n)
+    _delete_bound_scale(data)
+    start_response("200 OK",[("Content-type","text/plain")])
+    return ["Success"]
+
+def get_bindings(environ,start_response):
+    status = "200 OK"
+    output = _get_bindings()
+    headers = [("Content-type","application/json"),("Content-Length",str(len(output)))]
+    start_response(status,headers)
+    return [output]
+
+def describe_binding(environ,start_response):
+
+    params = cgi.parse_qs(environ["QUERY_STRING"])
+    id = cgi.escape(params["id"][0])
+
+    status = "200 OK"
+    output = _describe_binding(id)
+    headers = [("Content-type","application/json"),("Content-Length",str(len(output)))]
+    start_response(status,headers)
+    return [output]
+
+def write_attribute(environ,start_response):
+
+    params = cgi.parse_qs(environ["QUERY_STRING"])
+    id = cgi.escape(params.get("id",[""])[0])
+    scale = cgi.escape(params["scale"][0])
+    name = cgi.escape(params["name"][0])
+    sqldef = cgi.escape(params["sqldef"][0])
+    output = _write_attribute(scale,name,sqldef,id)
+
+    headers = start_response("200 OK",[("Content-type","text/plain")])
+    return [output]
+
+def write_binding(environ,start_response):
+
+    params = cgi.parse_qs(environ["QUERY_STRING"])
+    id = cgi.escape(params.get("id",[""])[0])
+    name = cgi.escape(params["name"][0])
+    host = cgi.escape(params["host"][0])
+    database = cgi.escape(params["database"][0])
+    output = _write_binding(name,host,database,id)
+
+    # Setting content-type header even though no content is returned. The reason is Firefox bug 521301.
+    start_response("200 OK",[("Content-type","text/plain")])
+    return [output]
+
+def write_bound_scale(environ,start_response):
+
+    n = int(environ.get("CONTENT_LENGTH",0))
+    data = environ['wsgi.input'].read(n)
+    output = _write_bound_scale(data)
+    start_response("200 OK",[("Content-type","text/plain")])
+    return [output]
+
+def add_output_column(environ,start_response):
+
+    n = int(environ.get("CONTENT_LENGTH",0))
+    data = environ['wsgi.input'].read(n)
+    _add_output_column(data)
+    start_response("200 OK",[("Content-type","text/plain")])
+    return ["Success"]
+
+def remove_output_column(environ,start_response):
+
+    n = int(environ.get("CONTENT_LENGTH",0))
+    data = environ['wsgi.input'].read(n)
+    _remove_output_column(data)
+    start_response("200 OK",[("Content-type","text/plain")])
+    return ["Success"]
+
 def not_found(environ,start_response):
     start_response("404 NOT FOUND",[("Content-type","text/plain")])
     return ["Not Found"]
 
 urls = [
     (r'^$',index),
+    (r'get_columns/?$',get_columns),
     (r'solve/?$',solve),
-    (r'get_sorts/?$',get_sorts)
+    (r'get_sorts/?$',get_sorts),
+    (r'get_scales/?$',get_scales),
+    (r'describe_scale/?$',describe_scale),
+    (r'write_scale/?$',write_scale),
+    (r'delete_scale/?$',delete_scale),
+    (r'write_attribute/?$',write_attribute),
+    (r'delete_attribute/?$',delete_attribute),
+    (r'get_bindings/?$',get_bindings),
+    (r'write_binding/?$',write_binding),
+    (r'describe_binding/?$',describe_binding),
+    (r'delete_binding/?$',delete_binding),
+    (r'write_bound_scale/?$',write_bound_scale),
+    (r'delete_bound_scale/?$',delete_bound_scale),
+    (r'add_output_column/?$',add_output_column),
+    (r'remove_output_column/?$',remove_output_column),
 ]
 
 def application(environ,start_response):
