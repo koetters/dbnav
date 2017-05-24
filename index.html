@@ -4,6 +4,34 @@
 <meta charset="utf-8"/>
 <title>pcfsearch</title>
 <style>
+
+ul#dropdown_list {
+    list-style-type: none;
+    position: absolute;
+    display: none;
+    z-index: 1;
+    background: gray;
+    margin: 0;
+    padding: 0;
+}
+
+ul#dropdown_list li {
+    padding: 6px;
+    cursor: default;
+    font-family: serif;
+    font-size: 16px;
+    width: 14em;
+}
+
+ul#dropdown_list li:hover {
+    background: blue;
+}
+
+
+#dropdown:hover ul#dropdown_list {
+    display: block;
+}
+
 a {
     text-decoration: none;
     color: white;
@@ -15,10 +43,14 @@ a:hover,a.selected {
     background: gray;
 }
 
-ul {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
+button#dropdown_header {
+    background: black;
+    border: 0px;
+    padding: 6px 6px 5px;
+    color: white;
+    font-family: serif;
+    font-size: 16px;
+    width:14em;
 }
 
 table {
@@ -42,16 +74,6 @@ td {
     cursor: default;
 }
 
-button {
-    padding: 4px 6px;
-    border-radius: 3px 3px 3px 3px;
-    font-family: Ubuntu;
-    font-size: 14px;
-    border: 1px outset #aaaaaa;
-    color: black;
-    cursor: inherit;
-}
-
 button.icon {
     padding: 0px;
     border-radius: initial;
@@ -62,34 +84,39 @@ button.icon:hover {
     background: gray;
 }
 
-button.def {
+button.option {
+    padding: 4px 6px;
+    border-radius: 3px 3px 3px 3px;
+    font-family: Ubuntu;
+    font-size: 14px;
+    border: 1px outset #aaaaaa;
+    color: black;
+    cursor: inherit;
+}
+
+button.option.def {
     padding: 1px 2px;
     background: linear-gradient(to top,yellow,white);
     color: red;
 }
 
-button.all {
+button.option.all {
     padding: 1px 2px;
     background: linear-gradient(to top,yellow,white);
 }
 
-button.some {
+button.option.some {
     padding: 1px 2px;
     background: linear-gradient(to top,cyan,white);
 }
 
-button.none {
+button.option.none {
     padding: 1px 2px;
     background: linear-gradient(to top,rgb(0,210,210),rgb(210,210,210));
     color: gray;
 }
 
-button.down {
-    border: 1px inset #aaaaaa;
-    font-style: italic;
-}
-
-button.attribute:hover, button.role:hover {
+button.option.attribute:hover, button.option.role:hover {
     border: 1px solid black;
 }
 
@@ -137,6 +164,7 @@ text {
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js">
 </script>
 <script>
+
 queue = [];
 edit_mode = false;
 box_edit_mode = false;
@@ -468,7 +496,7 @@ Graph.prototype = {
         return $path;
     },
 
-    json: function() {
+    toJSON: function() {
         var copy = {};
         for(var nodeId in this.nodes) {
             var node = this.nodes[nodeId];
@@ -479,7 +507,7 @@ Graph.prototype = {
 
             copy[nodeId] = {'sort':node.sort, 'def':atts, 'marked':node.marked, 'corefs':Object.keys(node.corefs) };
         }
-        return JSON.stringify(copy);
+        return copy;
     }
 };
 
@@ -1201,17 +1229,26 @@ function get_scales_2() {
     });
 }
 
+function select_dropdown() {
+    $this = $(this);
+    var id = $this.data("id");
+    var name = $this.text();
+    $dropdown_header = $("button#dropdown_header");
+    $dropdown_header.html(name+" &#x25bc;").data("id",id);
+}
+
 function get_sorts() {
     $.ajax({
         url: abspath("get_sorts"),
-        dataType: "json"
+        data: { "binding": $("button#dropdown_header").data("id") },
+        dataType: "json",
     }).done(function(data,status,jqxhr) {
 
         var details = $("<details>").prop("open",true);
         $("<summary>").text("Sorts").appendTo(details);
         var div = $("<div>").addClass("options");
         $.each(data,function(index,sort){
-            $("<button>").addClass("sort").text(sort).on("click",create_node).appendTo(div);
+            $("<button>").addClass("option").addClass("sort").text(sort).on("click",create_node).appendTo(div);
         });
         details.append(div);
         $("#sortsView").prepend(details);
@@ -1222,9 +1259,12 @@ function solve() {
     $.ajax({
         url: abspath("solve"),
         type: "POST",
-        data: graph.json(),
+        data: JSON.stringify({
+            "graph": graph,
+            "binding": $("button#dropdown_header").data("id"),
+        }),
         contentType: "application/json",
-        dataType: "json"
+        dataType: "json",
     }).done(function(data,status,jqxhr){
         var header = data["header"];
         var result = data["result"];
@@ -1259,6 +1299,7 @@ function solve() {
                 $.each(scaleOpts,function(index,entry) {
                     if(entry.hasOwnProperty("pos")) { // role attribute
                         $("<button>").addClass("role")
+                                     .addClass("option")
                                      .addClass(entry["grp"])
                                      .text(entry["name"]+"["+entry["pos"]+"]")
                                      .attr("data-obj",nodeId)
@@ -1269,6 +1310,7 @@ function solve() {
                                      .appendTo(div);
                     } else {
                         $("<button>").addClass("attribute")
+                                     .addClass("option")
                                      .addClass(entry["grp"])
                                      .text(entry["name"])
                                      .attr("data-obj",nodeId)
@@ -1287,6 +1329,7 @@ function solve() {
         var div = $("<div>").addClass("options");
         $.each(equalities,function(index,eq) {
             $("<button>").addClass("equality")
+                         .addClass("option")
                          .addClass(eq["grp"])
                          .attr("data-lhs",eq["lhs"])
                          .attr("data-rhs",eq["rhs"])
@@ -1352,8 +1395,33 @@ function set_content(e) {
 }
 
 $(document).ready(function(){
-    $("a.nav").on("click",set_content);
-    $("#ref_page2").trigger("click");
+    $.ajax({
+        url: abspath("get_bindings"),
+        dataType: "json",
+    }).done(function(data,status,jqxhr) {
+        var $dropdown_header = $("button#dropdown_header");
+        var $dropdown_list = $("ul#dropdown_list");
+        $dropdown_header.text("")
+                        .data("id","");
+        $dropdown_list.empty();
+        $.each(data,function(index,row) {
+            var id = row[0];
+            var name = row[1];
+            var host = row[2];
+            var database = row[3];
+            var li = $("<li>").attr("data-id",id)
+                     .text(name)
+                     .on("click",select_dropdown);
+            $dropdown_list.append(li);
+
+            if(index === 0) {
+                $dropdown_header.html(name+" &#x25bc;")
+                                .data("id",id);
+            }
+        });
+        $("a.nav").on("click",set_content);
+        $("#ref_page3").trigger("click");
+    });
 });
 
 </script>
@@ -1363,6 +1431,12 @@ $(document).ready(function(){
         <a id="ref_page1" class="nav" data-content="page1">Scales</a>
         <a id="ref_page2" class="nav" data-content="page2">Bindings</a>
         <a id="ref_page3" class="nav" data-content="page3">Navigation</a>
+        <div style="flex-grow:1"></div>
+        <div id="dropdown">
+            <button id="dropdown_header"></button>
+            <ul id="dropdown_list"></ul>
+        </div>
+        <div style="flex-basis:5%">
     </header>
     <template id="table_box">
         <div class="table_box">

@@ -12,6 +12,9 @@ class UnaryScale(object):
         self.name = name
         self.atts = dict(atts)
 
+    def add_attribute(self,m,sqldef):
+        self.atts[m] = sqldef
+
     def sql(self,atts,var,col):
         arg = re.sub(r"^[^.]+",var,col)
         where = [ self.atts[m].format(arg) for m in atts ]
@@ -26,6 +29,9 @@ class BinaryScale(object):
     def __init__(self,name,atts):
         self.name = name
         self.atts = dict(atts)
+
+    def add_attribute(self,m,sqldef):
+        self.atts[m] = sqldef
 
     def sql(self,atts,vars,cols):
         args = [ re.sub(r"^[^.]+",x,col) for x,col in izip(vars,cols) ]
@@ -48,15 +54,10 @@ class BinaryScale(object):
         refs = { m: "MIN({0})+MAX({0})".format("EXISTS(SELECT * FROM {0} WHERE {1})").format(sqlfrom,p.format(*args)) for m,p in self.atts.items() }
         return refs
 
-class Bindings(object):
+class Binding(object):
 
-    def __init__(self):
-        self._bindings = {
-            "pubdate": (centuryScale,["book.publication_date"]),
-            "nationality": (countryScale,["author.nationality"]),
-            "birthdate": (centuryScale,["author.date_of_birth"]),
-            "bookauthor": (foreignKeyScale,["book.author","author.name"]),
-        }
+    def __init__(self,bound_scales):
+            self._bindings = dict(bound_scales)
 
     def __call__(self,sort,role=None):
 
@@ -80,52 +81,69 @@ class Bindings(object):
     def sorts(self,prefix):
         return [ column.split(".")[0] for column in self._bindings[prefix][1] ]
 
-centuryScale = UnaryScale("century", {
-    "19th": "{0} BETWEEN '1800-01-01' AND '1899-12-31'",
-    "20th": "{0} BETWEEN '1900-01-01' AND '1999-12-31'",
-    "21st": "{0} BETWEEN '2000-01-01' AND '2099-12-31'",
-})
-
-countryScale = UnaryScale("country", {
-    "USA": "{0}='American'",
-    "GB": "{0}='British'",
-})
-
-foreignKeyScale = BinaryScale("foreignKey", {
-    "author": "{0}={1}",
-})
-
-bindings = Bindings()
-
-output = {
-    "author": "{0}.name",
-    "book": "{0}.title"
-}
-
-def out(t,sort):
-    return output[sort].format(t)
-
 def get_login():
     return ("dbnav","dbnav")
 
-def dbinfo():
+def _solve(data):
+
+    data = json.loads(data)
+    graph = data["graph"]
+    bindingId = data["binding"]
+
+    if not graph:
+        return json.dumps(dict(header=[],result=[],options={},equalities=[]))
+
     basedir = os.path.dirname(os.path.realpath(__file__))
     cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
     cursor = cnx.cursor()
-    cursor.execute("SELECT * FROM connection")
-    header = [ t[0] for t in cursor.description ]
-    row = cursor.fetchone()
+
+    cursor.execute("SELECT K.id,K.name,K.arity,m.name,m.sqldef FROM Scale as K,ScaleAttribute AS m WHERE m.scale = K.id AND K.id IN (SELECT scale FROM BoundScale WHERE binding = ?)",str(bindingId))
+    rows1 = cursor.fetchall()
+
+    cursor.execute("SELECT K.name,K.scale,y.arg,y.column FROM BoundScale AS K,BoundScaleArg AS y WHERE y.bound_scale = K.id AND K.binding = ?",str(bindingId))
+    rows2 = cursor.fetchall()
+
+    cursor.execute("SELECT table_name,column_name FROM BindingOutput WHERE binding = ?",str(bindingId))
+    rows3 = cursor.fetchall()
+
+    cursor.execute("SELECT name,host,database FROM Binding WHERE id=?",str(bindingId))
+    binding_name,host,database = cursor.fetchone()
 
     cursor.close()
     cnx.close()
 
-    return dict(zip(header,row))
+    scales = {}
+    for row in rows1:
+        id,name,arity,m,sqldef = row
+        if id in scales:
+            scales[id].add_attribute(m,sqldef)
+        else:
+            if arity == 1:
+                scales[id] = UnaryScale(name,{m:sqldef})
+            if arity == 2:
+                scales[id] = BinaryScale(name,{m:sqldef})
 
-def _solve(data):
+    bound_scales = {}
+    for row in rows2:
+        name,scaleId,arg,column = row
+        if name in bound_scales:
+            bound_scales[name][1].append((arg,column))
 
-    graph = json.loads(data)
-    if not graph:
-        return json.dumps(dict(header=[],result=[],options={},equalities=[]))
+        else:
+            bound_scales[name] = [scales[scaleId],[(arg,column)]]
+
+    for pair in bound_scales.values():
+        pair[1] = [ column for arg,column in sorted(pair[1],key=lambda x:x[0]) ]
+
+    output = {}
+    for row in rows3:
+        table_name,column_name = row
+        output[table_name] = "{{0}}.{0}".format(column_name)
+
+    def out(t,sort):
+        return output[sort].format(t)
+
+    binding = Binding(bound_scales)
 
     select = []
     refselect = []
@@ -138,7 +156,7 @@ def _solve(data):
     for k,v in graph.items():
 
         if "#" in k:
-            for prefix,scale,columns in bindings(v["sort"]):
+            for prefix,scale,columns in binding(v["sort"]):
                 conditions,refs = scale.sql(v["def"].get(prefix,[]), k.split("#"), columns)
                 where += conditions
 
@@ -155,7 +173,7 @@ def _solve(data):
 
             sqlfrom.append("{0} AS {1}".format(v["sort"],k))
 
-            for prefix,scale,columns in bindings(v["sort"]):
+            for prefix,scale,columns in binding(v["sort"]):
                 conditions,refs = scale.sql(v["def"].get(prefix,[]),k,columns[0])
                 where += conditions
 
@@ -166,12 +184,12 @@ def _solve(data):
                         refselect.append("{0} AS '{1}.{2}:{3}'".format(value,k,prefix,m))
 
             for role in [1,2]:
-                for prefix,scale,columns in bindings(v["sort"],role):
+                for prefix,scale,columns in binding(v["sort"],role):
                     refs = scale.rolesql(k,role,columns)
 
                     for m,value in refs.items():
                         if value in ["none","some","all","def"]:
-                            options.setdefault(k,{}).setdefault(prefix,[]).append(dict(name=m,grp=value,pos=role,sort=bindings.sorts(prefix)))
+                            options.setdefault(k,{}).setdefault(prefix,[]).append(dict(name=m,grp=value,pos=role,sort=binding.sorts(prefix)))
                         else:
                             refselect.append("{0} AS '{1}.{2}:{3}[{4}]'".format(value,k,prefix,m,role))
 
@@ -185,8 +203,9 @@ def _solve(data):
                 else:
                     refselect.append("MIN({0})+MAX({0}) AS '{1}={2}'".format(condition,k1,k2))
 
-    info = dbinfo()
-    cnx = mysql.connector.connect(**info)
+    user,password = get_login()
+    
+    cnx = mysql.connector.connect(user=user,password=password,host=host,database=database)
     cursor = cnx.cursor()
 
     query = "SELECT DISTINCT " + ", ".join(select) + " FROM " + ", ".join(sqlfrom) + (" WHERE " if where else "") + " AND ".join(where)
@@ -212,7 +231,7 @@ def _solve(data):
             entry = dict(name=m,grp=groups[k])
             if role:
                 entry["pos"]=role
-                entry["sort"]=bindings.sorts(prefix)
+                entry["sort"]=binding.sorts(prefix)
             options.setdefault(nodeId,{}).setdefault(prefix,[]).append(entry)
 
     response = json.dumps(dict(header=header,result=rows,options=options,equalities=equalities))
@@ -252,10 +271,23 @@ def _get_columns(bindingId,host,database):
     rows = [ (table,column,(table,column) in output_columns) for table,column in rows ]
     return json.dumps(rows)
 
-def _get_sorts():
+def _get_sorts(bindingId):
 
-    info = dbinfo()
-    cnx = mysql.connector.connect(**info)
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
+    cursor = cnx.cursor()
+    cursor.execute("SELECT name,host,database FROM Binding WHERE id=?",bindingId)
+    row = cursor.fetchone()
+
+    cursor.close()
+    cnx.close()
+
+    name = row[0]
+    host = row[1]
+    database = row[2]
+    user,password = get_login()
+
+    cnx = mysql.connector.connect(user=user,password=password,host=host,database=database)
     cursor = cnx.cursor()
     cursor.execute("SHOW TABLES")
     rows = cursor.fetchall()
@@ -537,8 +569,12 @@ def solve(environ,start_response):
     return [output]
 
 def get_sorts(environ,start_response):
+
+    params = cgi.parse_qs(environ["QUERY_STRING"])
+    bindingId = cgi.escape(params["binding"][0])
+
     status = "200 OK"
-    output = _get_sorts()
+    output = _get_sorts(bindingId)
     headers = [("Content-type","application/json"),("Content-Length",str(len(output)))]
     start_response(status,headers)
     return [output]
