@@ -5,6 +5,43 @@
 <title>pcfsearch</title>
 <style>
 
+.hbox {
+    display: flex;
+    align-items: stretch;
+}
+
+.vbox {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.window {
+    display: flex;
+    flex-direction: column;
+    margin: 1px;
+}
+
+.titlebar {
+    display: flex;
+    background: black;
+    color: white;
+    padding: 5px;
+    font-weight: bold;
+}
+
+.title {
+    flex-grow: 1;
+    text-align: center;
+}
+
+.content {
+    flex-basis: 0;
+    flex-grow: 1;
+    background: blue;
+    overflow: auto;
+}
+
 ul#dropdown_list {
     list-style-type: none;
     position: absolute;
@@ -142,12 +179,11 @@ text {
     pointer-events: none;
 }
 
-.table_box {
-    margin: 2px;
-    background: blue;
+.table_box_content {
+    background: red;
 }
 
-.table_box.editable {
+.editable .table_box_content {
     background: green;
 }
 
@@ -1426,7 +1462,7 @@ $(document).ready(function(){
 
 </script>
 </head>
-<body style="height:100vh;margin:0px;display:flex;flex-direction:column;">
+<body class="vbox" style="height:100vh;margin:0px;">
     <header style="display:flex;background:black;">
         <a id="ref_page1" class="nav" data-content="page1">Scales</a>
         <a id="ref_page2" class="nav" data-content="page2">Bindings</a>
@@ -1439,34 +1475,36 @@ $(document).ready(function(){
         <div style="flex-basis:5%">
     </header>
     <template id="table_box">
-        <div class="table_box">
-            <div style="background:black;color:white;font-weight:bold;display:flex;padding:5px;">
+        <div class="table_box" style="display:flex;flex-direction:column;padding:2px;">
+            <div class="titlebar">
                 <div style="flex-basis:20%;"></div>
-                <div class="title" style="flex-grow:1;text-align:center;"></div>
+                <div class="title"></div>
                 <div style="flex-basis:20%;text-align:right;">
                     <button class="icon js-delete_binding_box">x</button>
                 </div>
             </div>
-            <table style="margin:5px;">
-                <thead>
-                    <tr><th style="width:100px;">Parameter</th><th style="width:200px;">Column</th></tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+            <div class="table_box_content">
+                <table style="margin:5px;">
+                    <thead>
+                        <tr><th style="width:100px;">Parameter</th><th style="width:200px;">Column</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
     </template>
     <template id="page1">
-        <main style="height:100%;display:flex;">
-            <section style="width:50%;display:flex;flex-direction:column;justify-content:center;align-items:center;">
-                <div style="background:blue;margin:2px;">
-                    <div style="background:black;color:white;font-weight:bold;display:flex;padding:5px;">
-                        <div style="flex-basis:20%;"></div>
-                        <div style="flex-grow:1;text-align:center;">Conceptual Scales</div>
-                        <div style="flex-basis:20%;text-align:right;">
-                            <button class="icon js-create_scale">&plus;</button>
-                            <button class="icon js-delete-scale">&minus;</button>
-                        </div>
+        <main class="hbox" style="flex-grow:1;">
+            <div class="window" style="flex-basis:50%;">
+                <div class="titlebar">
+                    <div style="flex-basis:20%;"></div>
+                    <div class="title">Conceptual Scales</div>
+                    <div style="flex-basis:20%;text-align:right;">
+                        <button class="icon js-create_scale">&plus;</button>
+                        <button class="icon js-delete-scale">&minus;</button>
                     </div>
+                </div>
+                <div class="content">
                     <table style="margin:5px;">
                         <thead>
                             <tr><th style="width:200px;">Name</th><th style="width:100px;">Arity</th></tr>
@@ -1474,17 +1512,17 @@ $(document).ready(function(){
                         <tbody id="scales"></tbody>
                     </table>
                 </div>
-            </section>
-            <section style="width:50%;display:flex;flex-direction:column;justify-content:center;align-items:center;">
-                <div style="background:blue;margin:2px;">
-                    <div style="background:black;color:white;font-weight:bold;display:flex;padding:5px;">
-                        <div style="flex-basis:20%;"></div>
-                        <div style="flex-grow:1;text-align:center;">Attributes</div>
-                        <div style="flex-basis:20%;text-align:right;">
-                            <button class="icon js-create_attribute">&plus;</button>
-                            <button class="icon js-delete_attribute">&minus;</button>
-                        </div>
+            </div>
+            <div class="window" style="flex-basis:50%;">
+                <div class="titlebar">
+                    <div style="flex-basis:20%;"></div>
+                    <div class="title">Attributes</div>
+                    <div style="flex-basis:20%;text-align:right;">
+                        <button class="icon js-create_attribute">&plus;</button>
+                        <button class="icon js-delete_attribute">&minus;</button>
                     </div>
+                </div>
+                <div class="content">
                     <table style="margin:5px;">
                         <thead>
                             <tr><th style="width:100px;">Attribute</th><th style="width:400px;">SQL Definition</th></tr>
@@ -1492,49 +1530,53 @@ $(document).ready(function(){
                         <tbody id="attributes"></tbody>
                     </table>
                 </div>
-            </section>
+            </div>
         </main>
     </template>
     <template id="page2">
-        <main style="height:100%;display:flex;">
-            <section style="width:33%;display:flex;flex-direction:column;justify-content:center;align-items:center;">
-                <div style="background:blue;margin:2px;">
-                    <div style="background:black;color:white;font-weight:bold;display:flex;padding:5px;">
+        <main class="hbox" style="flex-grow:1;">
+            <div class="vbox" style="flex-basis:33%;">
+                <div class="window" style="flex-basis:50%;">
+                    <div class="titlebar">
                         <div style="flex-basis:20%;"></div>
-                        <div style="flex-grow:1;text-align:center;">Bindings</div>
+                        <div class="title">Bindings</div>
                         <div style="flex-basis:20%;text-align:right;">
                             <button class="icon js-create_binding">&plus;</button>
                             <button class="icon js-delete_binding">&minus;</button>
                         </div>
                     </div>
-                    <table style="margin:5px;">
-                        <thead>
-                            <tr><th style="width:100px;">Host</th><th style="width:100px;">Database</th><th style="width:100px;">Binding</th></tr>
-                        </thead>
-                        <tbody id="bindings"></tbody>
-                    </table>
+                    <div class="content">
+                        <table style="margin:5px;">
+                            <thead>
+                                <tr><th style="width:100px;">Host</th><th style="width:100px;">Database</th><th style="width:100px;">Binding</th></tr>
+                            </thead>
+                            <tbody id="bindings"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <div style="background:blue;margin:2px;">
-                    <div style="background:black;color:white;font-weight:bold;display:flex;padding:5px;">
+                <div class="window" style="flex-basis:50%;">
+                    <div class="titlebar">
                         <div style="flex-basis:20%;"></div>
-                        <div style="flex-grow:1;text-align:center;">Conceptual Scales</div>
+                        <div class="title">Conceptual Scales</div>
                         <div style="flex-basis:20%;text-align:right;"></div>
                     </div>
-                    <table style="margin:5px;">
-                        <thead>
-                            <tr><th style="width:200px;">Name</th><th style="width:100px;">Arity</th></tr>
-                        </thead>
-                        <tbody id="scales"></tbody>
-                    </table>
-                </div>
-            </section>
-            <section style="height:100%;width:33%;display:flex;flex-direction:column;justify-content:center;align-items:center;">
-                <div style="background:blue;margin:2px;">
-                    <div style="background:black;color:white;font-weight:bold;display:flex;padding:5px;">
-                        <div style="flex-basis:20%;"></div>
-                        <div style="flex-grow:1;text-align:center;">Columns</div>
-                        <div style="flex-basis:20%;text-align:right;"></div>
+                    <div class="content">
+                        <table style="margin:5px;">
+                            <thead>
+                                <tr><th style="width:200px;">Name</th><th style="width:100px;">Arity</th></tr>
+                            </thead>
+                            <tbody id="scales"></tbody>
+                        </table>
                     </div>
+                </div>
+            </div>
+            <div class="window" style="flex-basis:34%;">
+                <div class="titlebar">
+                    <div style="flex-basis:20%;"></div>
+                    <div class="title">Columns</div>
+                    <div style="flex-basis:20%;text-align:right;"></div>
+                </div>
+                <div class="content">
                     <table style="margin:5px;">
                         <thead>
                             <tr><th style="width:200px;">Table</th><th style="width:200px;">Column</th></tr>
@@ -1542,36 +1584,49 @@ $(document).ready(function(){
                         <tbody id="columns"></tbody>
                     </table>
                 </div>
-            </section>
-            <section style="height:100%;width:33%;display:flex;flex-direction:column;justify-content:center;align-items:center;">
-                <div style="height:70%;width:90%;">
-                    <div style="background:black;color:white;font-weight:bold;display:flex;padding:5px;">
-                        <div style="flex-basis:20%;"></div>
-                        <div style="flex-grow:1;text-align:center;">Bound Scales</div>
-                        <div style="flex-basis:20%;text-align:right;"></div>
-                    </div>
-                    <div id="bound_scales" style="padding:5px;height:100%;background:gray;overflow:auto;"></div>
+            </div>
+            <div class="window" style="flex-basis:33%;">
+                <div class="titlebar">
+                    <div style="flex-basis:20%;"></div>
+                    <div class="title">Bound Scales</div>
+                    <div style="flex-basis:20%;text-align:right;"></div>
                 </div>
-            </section>
+                <div id="bound_scales" class="content"></div>
+            </div>
         </main>
     </template>
     <template id="page3">
-        <main style="height:100%;display:flex;flex-direction:column;">
-            <section style="display:flex;height:50%;">
-                <section style="background:gray;width:25%;">
-                    <div id="sortsView"></div>
-                    <div id="optionsView"></div>
-                </section>
-                <svg style="background:white;width:75%;">
-                    <g></g>
-                </svg>
-            </section>
-            <section style="background:blue;height:50%;overflow:auto;">
-                <table id="resultTable"></table>
-            </section>
+        <main class="vbox" style="flex-grow:1;">
+            <div class="hbox" style="flex-basis:50%;">
+                <div class="window" style="flex-basis:25%;">
+                    <div class="titlebar">
+                        <div class="title">Options</div>
+                    </div>
+                    <div class="content">
+                        <div id="sortsView"></div>
+                        <div id="optionsView"></div>
+                    </div>
+                </div>
+                <div class="window" style="flex-basis:75%;">
+                    <div class="titlebar">
+                        <div class="title">Graph</div>
+                    </div>
+                    <svg class="content" style="background:white;">
+                        <g></g>
+                    </svg>
+                </div>
+            </div>
+            <div class="window" style="flex-basis:50%;">
+                <div class="titlebar">
+                    <div class="title">Result</div>
+                </div>
+                <div class="content">
+                    <table id="resultTable"></table>
+                <div>
+            </div>
         </main>
     </template>
-    <main style="height:100%;">
+    <main style="flex-grow:1;">
     </main>
 </body>
 </html>

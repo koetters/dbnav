@@ -97,16 +97,16 @@ def _solve(data):
     cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
     cursor = cnx.cursor()
 
-    cursor.execute("SELECT K.id,K.name,K.arity,m.name,m.sqldef FROM Scale as K,ScaleAttribute AS m WHERE m.scale = K.id AND K.id IN (SELECT scale FROM BoundScale WHERE binding = ?)",str(bindingId))
+    cursor.execute("SELECT K.id,K.name,K.arity,m.name,m.sqldef FROM Scale as K,ScaleAttribute AS m WHERE m.scale = K.id AND K.id IN (SELECT scale FROM BoundScale WHERE binding = ?)",[str(bindingId)])
     rows1 = cursor.fetchall()
 
-    cursor.execute("SELECT K.name,K.scale,y.arg,y.column FROM BoundScale AS K,BoundScaleArg AS y WHERE y.bound_scale = K.id AND K.binding = ?",str(bindingId))
+    cursor.execute("SELECT K.name,K.scale,y.arg,y.column FROM BoundScale AS K,BoundScaleArg AS y WHERE y.bound_scale = K.id AND K.binding = ?",[str(bindingId)])
     rows2 = cursor.fetchall()
 
-    cursor.execute("SELECT table_name,column_name FROM BindingOutput WHERE binding = ?",str(bindingId))
+    cursor.execute("SELECT table_name,column_name FROM BindingOutput WHERE binding = ?",[str(bindingId)])
     rows3 = cursor.fetchall()
 
-    cursor.execute("SELECT name,host,database FROM Binding WHERE id=?",str(bindingId))
+    cursor.execute("SELECT name,host,database FROM Binding WHERE id=?",[str(bindingId)])
     binding_name,host,database = cursor.fetchone()
 
     cursor.close()
@@ -262,7 +262,7 @@ def _get_columns(bindingId,host,database):
     basedir = os.path.dirname(os.path.realpath(__file__))
     cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
     cursor = cnx.cursor()
-    cursor.execute("SELECT table_name,column_name FROM BindingOutput WHERE binding=?",bindingId)
+    cursor.execute("SELECT table_name,column_name FROM BindingOutput WHERE binding=?",[bindingId])
     output_columns = cursor.fetchall()
 
     cursor.close()
@@ -276,7 +276,7 @@ def _get_sorts(bindingId):
     basedir = os.path.dirname(os.path.realpath(__file__))
     cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
     cursor = cnx.cursor()
-    cursor.execute("SELECT name,host,database FROM Binding WHERE id=?",bindingId)
+    cursor.execute("SELECT name,host,database FROM Binding WHERE id=?",[bindingId])
     row = cursor.fetchone()
 
     cursor.close()
@@ -317,7 +317,7 @@ def _describe_scale(id):
     cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
     cursor = cnx.cursor()
 
-    cursor.execute("SELECT m.id,m.name,m.sqldef FROM Scale AS K,ScaleAttribute AS m WHERE K.id = '{0}' AND m.scale = K.id".format(id))
+    cursor.execute("SELECT m.id,m.name,m.sqldef FROM Scale AS K,ScaleAttribute AS m WHERE K.id = ? AND m.scale = K.id",[id])
     rows = cursor.fetchall()
 
     cursor.close()
@@ -345,8 +345,8 @@ def _describe_binding(id):
     basedir = os.path.dirname(os.path.realpath(__file__))
     cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
     cursor = cnx.cursor()
-    query = "SELECT K.id,K.name,K.scale,y.arg,y.column FROM BoundScale AS K, BoundScaleArg AS y WHERE K.binding='{0}' AND K.id=y.bound_scale".format(id)
-    cursor.execute(query)
+    query = "SELECT K.id,K.name,K.scale,y.arg,y.column FROM BoundScale AS K, BoundScaleArg AS y WHERE K.binding=? AND K.id=y.bound_scale"
+    cursor.execute(query,[id])
     rows = cursor.fetchall()
 
     cursor.close()
@@ -371,15 +371,15 @@ def _write_bound_scale(data):
     cursor = cnx.cursor()
 
     if id == "":
-        cursor.execute("INSERT INTO BoundScale (name,scale,binding) VALUES (?,?,?)",(name,scaleId,bindingId))
+        cursor.execute("INSERT INTO BoundScale (name,scale,binding) VALUES (?,?,?)",[name,scaleId,bindingId])
         cursor.execute("SELECT last_insert_rowid()")
         id = cursor.fetchone()[0]
-        values = [ (id,arg,column) for arg,column in bindings.items() ]
+        values = [ [id,arg,column] for arg,column in bindings.items() ]
         cursor.executemany("INSERT INTO BoundScaleArg (bound_scale,arg,column) VALUES (?,?,?)",values)
     else:
-        cursor.execute("UPDATE BoundScale SET name=? WHERE id=?",(name,id))
+        cursor.execute("UPDATE BoundScale SET name=? WHERE id=?",[name,id])
         for arg,column in bindings.items():
-            cursor.execute("UPDATE BoundScaleArg SET column=? WHERE bound_scale=? AND arg=?",(column,id,arg))
+            cursor.execute("UPDATE BoundScaleArg SET column=? WHERE bound_scale=? AND arg=?",[column,id,arg])
 
     cnx.commit()
     cursor.close()
@@ -398,11 +398,11 @@ def _write_scale(data):
     cursor = cnx.cursor()
 
     if id == "":
-        cursor.execute("INSERT INTO Scale (name,arity) VALUES (?,?)",(name,arity))
+        cursor.execute("INSERT INTO Scale (name,arity) VALUES (?,?)",[name,arity])
         cursor.execute("SELECT last_insert_rowid()")
         id = cursor.fetchone()[0]
     else:
-        cursor.execute("UPDATE Scale SET name=?,arity=? WHERE id=?",(name,arity,id))
+        cursor.execute("UPDATE Scale SET name=?,arity=? WHERE id=?",[name,arity,id])
 
     cnx.commit()
     cursor.close()
@@ -417,11 +417,11 @@ def _write_binding(name,host,database,id=""):
     cursor = cnx.cursor()
 
     if id == "":
-        cursor.execute("INSERT INTO Binding (name,host,database) VALUES (?,?,?)",(name,host,database))
+        cursor.execute("INSERT INTO Binding (name,host,database) VALUES (?,?,?)",[name,host,database])
         cursor.execute("SELECT last_insert_rowid()")
         id = cursor.fetchone()[0]
     else:
-        cursor.execute("UPDATE Binding SET name=?,host=?,database=? WHERE id=?",(name,host,database,id))
+        cursor.execute("UPDATE Binding SET name=?,host=?,database=? WHERE id=?",[name,host,database,id])
 
     cnx.commit()
     cursor.close()
@@ -436,8 +436,8 @@ def _delete_scale(data):
     basedir = os.path.dirname(os.path.realpath(__file__))
     cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
     cursor = cnx.cursor()
-    cnx.execute("DELETE FROM Scale WHERE id=?",id)
-    cnx.execute("DELETE FROM ScaleAttribute WHERE scale=?",id)
+    cnx.execute("DELETE FROM Scale WHERE id=?",[id])
+    cnx.execute("DELETE FROM ScaleAttribute WHERE scale=?",[id])
 
     cnx.commit()
     cursor.close()
@@ -450,7 +450,7 @@ def _delete_attribute(data):
     basedir = os.path.dirname(os.path.realpath(__file__))
     cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
     cursor = cnx.cursor()
-    cnx.execute("DELETE FROM ScaleAttribute WHERE id=?",id)
+    cnx.execute("DELETE FROM ScaleAttribute WHERE id=?",[id])
 
     cnx.commit()
     cursor.close()
@@ -463,10 +463,10 @@ def _delete_binding(data):
     basedir = os.path.dirname(os.path.realpath(__file__))
     cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
     cursor = cnx.cursor()
-    cnx.execute("DELETE FROM Binding WHERE id=?",id)
-    cnx.execute("DELETE FROM BoundScaleArg WHERE bound_scale IN (SELECT id FROM BoundScale WHERE binding=?)",id)
-    cnx.execute("DELETE FROM BoundScale WHERE binding=?",id)
-    cnx.execute("DELETE FROM BindingOutput WHERE binding=?",id)
+    cnx.execute("DELETE FROM Binding WHERE id=?",[id])
+    cnx.execute("DELETE FROM BoundScaleArg WHERE bound_scale IN (SELECT id FROM BoundScale WHERE binding=?)",[id])
+    cnx.execute("DELETE FROM BoundScale WHERE binding=?",[id])
+    cnx.execute("DELETE FROM BindingOutput WHERE binding=?",[id])
 
     cnx.commit()
     cursor.close()
@@ -479,8 +479,8 @@ def _delete_bound_scale(data):
     basedir = os.path.dirname(os.path.realpath(__file__))
     cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
     cursor = cnx.cursor()
-    cnx.execute("DELETE FROM BoundScale WHERE id=?",id)
-    cnx.execute("DELETE FROM BoundScaleArg WHERE bound_scale=?",id)
+    cnx.execute("DELETE FROM BoundScale WHERE id=?",[id])
+    cnx.execute("DELETE FROM BoundScaleArg WHERE bound_scale=?",[id])
 
     cnx.commit()
     cursor.close()
@@ -493,11 +493,11 @@ def _write_attribute(scale,name,sqldef,id=""):
     cursor = cnx.cursor()
 
     if id == "":
-        cursor.execute("INSERT INTO ScaleAttribute (scale,name,sqldef) VALUES (?,?,?)",(scale,name,sqldef))
+        cursor.execute("INSERT INTO ScaleAttribute (scale,name,sqldef) VALUES (?,?,?)",[scale,name,sqldef])
         cursor.execute("SELECT last_insert_rowid()")
         id = cursor.fetchone()[0]
     else:
-        cursor.execute("UPDATE ScaleAttribute SET name=?,sqldef=? WHERE id=?",(name,sqldef,id))
+        cursor.execute("UPDATE ScaleAttribute SET name=?,sqldef=? WHERE id=?",[name,sqldef,id])
 
     cnx.commit()
     cursor.close()
@@ -514,7 +514,7 @@ def _add_output_column(data):
     basedir = os.path.dirname(os.path.realpath(__file__))
     cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
     cursor = cnx.cursor()
-    cursor.execute("INSERT INTO BindingOutput (binding,table_name,column_name) VALUES (?,?,?)",(binding,table,column))
+    cursor.execute("INSERT INTO BindingOutput (binding,table_name,column_name) VALUES (?,?,?)",[binding,table,column])
     cnx.commit()
 
     cursor.close()
@@ -529,7 +529,7 @@ def _remove_output_column(data):
     basedir = os.path.dirname(os.path.realpath(__file__))
     cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
     cursor = cnx.cursor()
-    cursor.execute("DELETE FROM BindingOutput WHERE binding=? AND table_name=? AND column_name=?",(binding,table,column))
+    cursor.execute("DELETE FROM BindingOutput WHERE binding=? AND table_name=? AND column_name=?",[binding,table,column])
     cnx.commit()
 
     cursor.close()
