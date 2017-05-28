@@ -1170,10 +1170,10 @@ INSERT INTO `Orders` (`OrderID`, `CustomerID`, `EmployeeID`, `OrderDate`, `Requi
 -- --------------------------------------------------------
 
 --
--- Table structure for table `order_details`
+-- Table structure for table `OrderDetails`
 --
 
-CREATE TABLE `order_details` (
+CREATE TABLE `OrderDetails` (
   `OrderID` int(11) NOT NULL,
   `ProductID` int(11) NOT NULL,
   `UnitPrice` decimal(15,4) NOT NULL,
@@ -1182,10 +1182,10 @@ CREATE TABLE `order_details` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data for table `order_details`
+-- Dumping data for table `OrderDetails`
 --
 
-INSERT INTO `order_details` (`OrderID`, `ProductID`, `UnitPrice`, `Quantity`, `Discount`) VALUES
+INSERT INTO `OrderDetails` (`OrderID`, `ProductID`, `UnitPrice`, `Quantity`, `Discount`) VALUES
 (10248, 11, '14.0000', 12, 0),
 (10248, 42, '9.8000', 10, 0),
 (10248, 72, '34.8000', 5, 0),
@@ -2870,7 +2870,7 @@ INSERT INTO `order_details` (`OrderID`, `ProductID`, `UnitPrice`, `Quantity`, `D
 (10890, 41, '9.6500', 14, 0),
 (10891, 30, '25.8900', 15, 0.05),
 (10892, 59, '55.0000', 40, 0.05);
-INSERT INTO `order_details` (`OrderID`, `ProductID`, `UnitPrice`, `Quantity`, `Discount`) VALUES
+INSERT INTO `OrderDetails` (`OrderID`, `ProductID`, `UnitPrice`, `Quantity`, `Discount`) VALUES
 (10893, 8, '40.0000', 30, 0),
 (10893, 24, '4.5000', 10, 0),
 (10893, 29, '123.7900', 24, 0),
@@ -3676,9 +3676,9 @@ ALTER TABLE `Orders`
   ADD KEY `ShipPostalCode` (`ShipPostalCode`);
 
 --
--- Indexes for table `order_details`
+-- Indexes for table `OrderDetails`
 --
-ALTER TABLE `order_details`
+ALTER TABLE `OrderDetails`
   ADD PRIMARY KEY (`OrderID`,`ProductID`),
   ADD KEY `OrderID` (`OrderID`),
   ADD KEY `OrdersOrder_Details` (`OrderID`),
