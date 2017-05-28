@@ -91,7 +91,7 @@ def _solve(data):
     bindingId = data["binding"]
 
     if not graph:
-        return json.dumps(dict(header=[],result=[],options={},equalities=[]))
+        return dict(header=[],result=[],options={},equalities=[])
 
     basedir = os.path.dirname(os.path.realpath(__file__))
     cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
@@ -209,16 +209,25 @@ def _solve(data):
     cursor = cnx.cursor()
 
     query = "SELECT DISTINCT " + ", ".join(select) + " FROM " + ", ".join(sqlfrom) + (" WHERE " if where else "") + " AND ".join(where)
+    refquery = "SELECT " + ", ".join(refselect) + " FROM " + ", ".join(sqlfrom) + (" WHERE " if where else "") + " AND ".join(where)
+
+    print(query)
+    print(refquery)
+
     cursor.execute(query)
     rows = cursor.fetchall()
     header = [t[0] for t in cursor.description]
 
-    refquery = "SELECT " + ", ".join(refselect) + " FROM " + ", ".join(sqlfrom) + (" WHERE " if where else "") + " AND ".join(where)
-    cursor.execute(refquery)
-    row = cursor.fetchone()
-    refheader = [t[0] for t in cursor.description]
-    cursor.close()
-    cnx.close()
+    if refselect:
+        cursor.execute(refquery)
+        row = cursor.fetchone()
+        refheader = [t[0] for t in cursor.description]
+        cursor.close()
+        cnx.close()
+
+    else:
+        refheader = []
+        row = []
 
     groups = ["none","some","all"]
     for field,k in izip(refheader,row):
@@ -234,8 +243,8 @@ def _solve(data):
                 entry["sort"]=binding.sorts(prefix)
             options.setdefault(nodeId,{}).setdefault(prefix,[]).append(entry)
 
-    response = json.dumps(dict(header=header,result=rows,options=options,equalities=equalities))
-    return response
+    result = dict(header=header,result=rows,options=options,equalities=equalities)
+    return result
 
 def _get_columns(bindingId,host,database):
 
@@ -251,7 +260,7 @@ def _get_columns(bindingId,host,database):
         rows = cursor.fetchall()
 
     except mysql.connector.InterfaceError:
-        return json.dumps([])
+        return []
 
     finally:
         if cursor is not None:
@@ -269,7 +278,7 @@ def _get_columns(bindingId,host,database):
     cnx.close()
 
     rows = [ (table,column,(table,column) in output_columns) for table,column in rows ]
-    return json.dumps(rows)
+    return rows
 
 def _get_sorts(bindingId):
 
@@ -296,7 +305,7 @@ def _get_sorts(bindingId):
     cursor.close()
     cnx.close()
 
-    return json.dumps(sorts)
+    return sorts
 
 def _get_scales():
 
@@ -309,7 +318,7 @@ def _get_scales():
     cursor.close()
     cnx.close()
 
-    return json.dumps(rows)
+    return rows
 
 def _describe_scale(id):
 
@@ -323,8 +332,7 @@ def _describe_scale(id):
     cursor.close()
     cnx.close()
 
-    response = json.dumps(rows)
-    return response
+    return rows
 
 
 def _get_bindings():
@@ -338,7 +346,7 @@ def _get_bindings():
     cursor.close()
     cnx.close()
 
-    return json.dumps(rows)
+    return rows
 
 def _describe_binding(id):
 
@@ -356,7 +364,7 @@ def _describe_binding(id):
     for row in rows:
         bound_scales.setdefault(row[0],{"name":row[1],"scale":row[2],"bindings":[]})["bindings"].append([row[3],row[4]])
 
-    return json.dumps(bound_scales)
+    return bound_scales
 
 def _write_bound_scale(data):
     bound_scale = json.loads(data)
@@ -385,7 +393,7 @@ def _write_bound_scale(data):
     cursor.close()
     cnx.close()
 
-    return json.dumps(id)
+    return id
 
 def _write_scale(data):
     scale = json.loads(data)
@@ -408,7 +416,7 @@ def _write_scale(data):
     cursor.close()
     cnx.close()
 
-    return json.dumps(id)
+    return id
 
 def _write_binding(name,host,database,id=""):
 
@@ -427,7 +435,7 @@ def _write_binding(name,host,database,id=""):
     cursor.close()
     cnx.close()
 
-    return json.dumps(id)
+    return id
 
 def _delete_scale(data):
 
@@ -503,7 +511,7 @@ def _write_attribute(scale,name,sqldef,id=""):
     cursor.close()
     cnx.close()
 
-    return json.dumps(id)
+    return id
 
 def _add_output_column(data):
     output_column = json.loads(data)
@@ -553,7 +561,7 @@ def get_columns(environ,start_response):
     database = cgi.escape(params["database"][0])
 
     status = "200 OK"
-    output = _get_columns(bindingId,host,database)
+    output = json.dumps(_get_columns(bindingId,host,database))
     headers = [("Content-type","application/json"),("Content-Length",str(len(output)))]
     start_response(status,headers)
     return [output]
@@ -563,7 +571,7 @@ def solve(environ,start_response):
     status = "200 OK"
     n = int(environ.get("CONTENT_LENGTH",0))
     data = environ['wsgi.input'].read(n)
-    output = _solve(data)
+    output = json.dumps(_solve(data))
     headers = [("Content-type","application/json"),("Content-Length",str(len(output)))]
     start_response(status,headers)
     return [output]
@@ -574,14 +582,31 @@ def get_sorts(environ,start_response):
     bindingId = cgi.escape(params["binding"][0])
 
     status = "200 OK"
-    output = _get_sorts(bindingId)
+    output = json.dumps(_get_sorts(bindingId))
+    headers = [("Content-type","application/json"),("Content-Length",str(len(output)))]
+    start_response(status,headers)
+    return [output]
+
+# this is not very elegant. the idea is to combine two Ajax requests into one.
+# better method: compute initial state server-side (no Ajax request at all then)
+def get_sorts_and_bindings(environ,start_response):
+
+    status = "200 OK"
+    bindings = _get_bindings()
+    if bindings:
+        bindingId = bindings[0][0]
+        sorts = _get_sorts(bindingId)
+    else:
+        bindingId = ""
+        sorts = []
+    output = json.dumps(dict(bindingId=bindingId,sorts=sorts,bindings=bindings))
     headers = [("Content-type","application/json"),("Content-Length",str(len(output)))]
     start_response(status,headers)
     return [output]
 
 def get_scales(environ,start_response):
     status = "200 OK"
-    output = _get_scales()
+    output = json.dumps(_get_scales())
     headers = [("Content-type","application/json"),("Content-Length",str(len(output)))]
     start_response(status,headers)
     return [output]
@@ -592,7 +617,7 @@ def describe_scale(environ,start_response):
     id = cgi.escape(params["id"][0])
 
     status = "200 OK"
-    output = _describe_scale(id)
+    output = json.dumps(_describe_scale(id))
     headers = [("Content-type","application/json"),("Content-Length",str(len(output)))]
     start_response(status,headers)
     return [output]
@@ -601,8 +626,8 @@ def write_scale(environ,start_response):
 
     n = int(environ.get("CONTENT_LENGTH",0))
     data = environ['wsgi.input'].read(n)
-    output = _write_scale(data)
-    start_response("200 OK",[("Content-type","text/plain")])
+    output = json.dumps(_write_scale(data))
+    start_response("200 OK",[("Content-type","application/json")])
     return [output]
 
 def delete_scale(environ,start_response):
@@ -639,7 +664,7 @@ def delete_bound_scale(environ,start_response):
 
 def get_bindings(environ,start_response):
     status = "200 OK"
-    output = _get_bindings()
+    output = json.dumps(_get_bindings())
     headers = [("Content-type","application/json"),("Content-Length",str(len(output)))]
     start_response(status,headers)
     return [output]
@@ -650,7 +675,7 @@ def describe_binding(environ,start_response):
     id = cgi.escape(params["id"][0])
 
     status = "200 OK"
-    output = _describe_binding(id)
+    output = json.dumps(_describe_binding(id))
     headers = [("Content-type","application/json"),("Content-Length",str(len(output)))]
     start_response(status,headers)
     return [output]
@@ -662,9 +687,9 @@ def write_attribute(environ,start_response):
     scale = cgi.escape(params["scale"][0])
     name = cgi.escape(params["name"][0])
     sqldef = cgi.escape(params["sqldef"][0])
-    output = _write_attribute(scale,name,sqldef,id)
+    output = json.dumps(_write_attribute(scale,name,sqldef,id))
 
-    headers = start_response("200 OK",[("Content-type","text/plain")])
+    headers = start_response("200 OK",[("Content-type","application/json")])
     return [output]
 
 def write_binding(environ,start_response):
@@ -674,18 +699,18 @@ def write_binding(environ,start_response):
     name = cgi.escape(params["name"][0])
     host = cgi.escape(params["host"][0])
     database = cgi.escape(params["database"][0])
-    output = _write_binding(name,host,database,id)
+    output = json.dumps(_write_binding(name,host,database,id))
 
     # Setting content-type header even though no content is returned. The reason is Firefox bug 521301.
-    start_response("200 OK",[("Content-type","text/plain")])
+    start_response("200 OK",[("Content-type","application/json")])
     return [output]
 
 def write_bound_scale(environ,start_response):
 
     n = int(environ.get("CONTENT_LENGTH",0))
     data = environ['wsgi.input'].read(n)
-    output = _write_bound_scale(data)
-    start_response("200 OK",[("Content-type","text/plain")])
+    output = json.dumps(_write_bound_scale(data))
+    start_response("200 OK",[("Content-type","application/json")])
     return [output]
 
 def add_output_column(environ,start_response):
@@ -712,14 +737,15 @@ urls = [
     (r'^$',index),
     (r'get_columns/?$',get_columns),
     (r'solve/?$',solve),
-    (r'get_sorts/?$',get_sorts),
     (r'get_scales/?$',get_scales),
     (r'describe_scale/?$',describe_scale),
     (r'write_scale/?$',write_scale),
     (r'delete_scale/?$',delete_scale),
     (r'write_attribute/?$',write_attribute),
     (r'delete_attribute/?$',delete_attribute),
+    (r'get_sorts/?$',get_sorts),
     (r'get_bindings/?$',get_bindings),
+    (r'get_sorts_and_bindings/?$',get_sorts_and_bindings),
     (r'write_binding/?$',write_binding),
     (r'describe_binding/?$',describe_binding),
     (r'delete_binding/?$',delete_binding),

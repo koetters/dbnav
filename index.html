@@ -44,20 +44,29 @@
 
 ul#dropdown_list {
     list-style-type: none;
+    border-top: 1px solid black;
+    border-left: 1px solid black;
     position: absolute;
     display: none;
     z-index: 1;
-    background: gray;
+    background: white;
     margin: 0;
     padding: 0;
+    max-height: 50vh;
+    overflow: auto;
 }
 
 ul#dropdown_list li {
     padding: 6px;
+    border-bottom: 1px solid black;
+    border-right: 1px solid black;
     cursor: default;
     font-family: serif;
     font-size: 16px;
     width: 14em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 ul#dropdown_list li:hover {
@@ -88,6 +97,10 @@ button#dropdown_header {
     font-family: serif;
     font-size: 16px;
     width:14em;
+    margin-right: 2em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 table {
@@ -1265,29 +1278,78 @@ function get_scales_2() {
     });
 }
 
-function select_dropdown() {
+function get_sorts() {
+
     $this = $(this);
     var id = $this.data("id");
     var name = $this.text();
     $dropdown_header = $("button#dropdown_header");
     $dropdown_header.html(name+" &#x25bc;").data("id",id);
-}
 
-function get_sorts() {
     $.ajax({
         url: abspath("get_sorts"),
-        data: { "binding": $("button#dropdown_header").data("id") },
+        data: { "binding": id },
+        dataType: "json",
+
+    }).done(function(data,status,jqxhr) {
+
+        var $sortsView = $("<div>").attr("id","sortsView");
+        var $details = $("<details>").prop("open",true);
+        $("<summary>").text("Sorts").appendTo($details);
+        var $div = $("<div>").addClass("options");
+        $.each(data,function(index,sort) {
+            $("<button>").addClass("option").addClass("sort").text(sort).on("click",create_node).appendTo($div);
+        });
+        $details.append($div);
+        $sortsView.append($details);
+        $("#sortsView").replaceWith($sortsView);
+    });
+}
+
+function get_sorts_and_bindings() {
+    $.ajax({
+        url: abspath("get_sorts_and_bindings"),
         dataType: "json",
     }).done(function(data,status,jqxhr) {
 
-        var details = $("<details>").prop("open",true);
-        $("<summary>").text("Sorts").appendTo(details);
-        var div = $("<div>").addClass("options");
-        $.each(data,function(index,sort){
-            $("<button>").addClass("option").addClass("sort").text(sort).on("click",create_node).appendTo(div);
+        var bindingId = data["bindingId"];
+
+        // set sorts
+        var $sortsView = $("<div>").attr("id","sortsView");
+        var $details = $("<details>").prop("open",true);
+        $("<summary>").text("Sorts").appendTo($details);
+        var $div = $("<div>").addClass("options");
+        $.each(data["sorts"],function(index,sort) {
+            $("<button>").addClass("option").addClass("sort").text(sort).on("click",create_node).appendTo($div);
         });
-        details.append(div);
-        $("#sortsView").prepend(details);
+        $details.append($div);
+        $sortsView.append($details);
+        $("#sortsView").replaceWith($sortsView);
+
+        // set bindings
+        var $dropdown = $("<div>").attr("id","dropdown");
+        var $dropdown_header = $("<button>").attr("id","dropdown_header");
+        var $dropdown_list = $("<ul>").attr("id","dropdown_list");
+        $.each(data["bindings"],function(index,row) {
+            var id = row[0];
+            var name = row[1];
+            var host = row[2];
+            var database = row[3];
+            var li = $("<li>").attr("data-id",id)
+                              .text(name)
+                              .on("click",get_sorts);
+            $dropdown_list.append(li);
+
+            if(id === bindingId) {
+                $dropdown_header.html(name+" &#x25bc;")
+                                .data("id",id);
+            }
+        });
+
+        $dropdown.append($dropdown_header)
+                 .append($dropdown_list);
+
+        $("#dropdown").replaceWith($dropdown);
     });
 }
 
@@ -1408,6 +1470,7 @@ function set_content(e) {
 
     if(page === "page1") {
         edit_mode = false;
+        $("#dropdown").replaceWith($("<div>").attr("id","dropdown"));
         get_scales();
         $(".js-create_scale").on("click",create_scale);
         $(".js-delete-scale").on("click",delete_scale);
@@ -1415,6 +1478,7 @@ function set_content(e) {
         $(".js-delete_attribute").on("click",delete_attribute);
     } else if(page === "page2") {
         edit_mode = false;
+        $("#dropdown").replaceWith($("<div>").attr("id","dropdown"));
         get_bindings();
         get_scales_2();
         $(".js-create_binding").on("click",create_binding);
@@ -1422,8 +1486,8 @@ function set_content(e) {
     } else if(page === "page3") {
         queue = [];
         edit_mode = false;
-        get_sorts();
-        $("svg").on("click",place_node);
+        get_sorts_and_bindings();
+        $(".js-place_node").on("click",place_node);
     }
 
     $("a.nav").removeClass("selected");
@@ -1435,26 +1499,6 @@ $(document).ready(function(){
         url: abspath("get_bindings"),
         dataType: "json",
     }).done(function(data,status,jqxhr) {
-        var $dropdown_header = $("button#dropdown_header");
-        var $dropdown_list = $("ul#dropdown_list");
-        $dropdown_header.text("")
-                        .data("id","");
-        $dropdown_list.empty();
-        $.each(data,function(index,row) {
-            var id = row[0];
-            var name = row[1];
-            var host = row[2];
-            var database = row[3];
-            var li = $("<li>").attr("data-id",id)
-                     .text(name)
-                     .on("click",select_dropdown);
-            $dropdown_list.append(li);
-
-            if(index === 0) {
-                $dropdown_header.html(name+" &#x25bc;")
-                                .data("id",id);
-            }
-        });
         $("a.nav").on("click",set_content);
         $("#ref_page3").trigger("click");
     });
@@ -1468,11 +1512,7 @@ $(document).ready(function(){
         <a id="ref_page2" class="nav" data-content="page2">Bindings</a>
         <a id="ref_page3" class="nav" data-content="page3">Navigation</a>
         <div style="flex-grow:1"></div>
-        <div id="dropdown">
-            <button id="dropdown_header"></button>
-            <ul id="dropdown_list"></ul>
-        </div>
-        <div style="flex-basis:5%">
+        <div id="dropdown"></div>
     </header>
     <template id="table_box">
         <div class="table_box" style="display:flex;flex-direction:column;padding:2px;">
@@ -1596,7 +1636,7 @@ $(document).ready(function(){
         </main>
     </template>
     <template id="page3">
-        <main class="vbox" style="flex-grow:1;">
+        <main class="vbox" style="flex-basis:100%;">
             <div class="hbox" style="flex-basis:50%;">
                 <div class="window" style="flex-basis:25%;">
                     <div class="titlebar">
@@ -1611,7 +1651,7 @@ $(document).ready(function(){
                     <div class="titlebar">
                         <div class="title">Graph</div>
                     </div>
-                    <svg class="content" style="background:white;">
+                    <svg class="content js-place_node" style="background:white;">
                         <g></g>
                     </svg>
                 </div>
