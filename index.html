@@ -28,6 +28,7 @@
     color: white;
     padding: 5px;
     font-weight: bold;
+    cursor: default;
 }
 
 .title {
@@ -36,10 +37,105 @@
 }
 
 .content {
+    display: flex;
+    flex-direction: column;
     flex-basis: 0;
     flex-grow: 1;
+    padding: 10px;
     background: blue;
     overflow: auto;
+}
+
+.canvas {
+    display: flex;
+    flex-direction: column;
+    flex-basis: 0;
+    flex-grow: 1;
+    background: white;
+    overflow: auto;
+}
+
+.table {
+    align-self: center;
+    max-width: 90%;
+}
+
+.thead {
+    overflow-x: hidden;
+    overflow-y: scroll;
+}
+
+.tbody {
+    max-height: 200px;
+    overflow-x: auto;
+    overflow-y: scroll;
+}
+
+.tr {
+    display: flex;
+}
+
+.th {
+    padding: 5px 2px;
+    margin: 1px;
+    background: gray;
+    cursor: default;
+    text-align: center;
+    font-weight: bold;
+}
+
+.td {
+    padding: 2px;
+    margin: 1px;
+    background: white;
+    cursor: pointer;
+    line-height: 1.2em;
+    min-height: 1.2em;
+}
+
+.tr.selected .td {
+    background: yellow;
+}
+
+.tr.buffer .td {
+    background: green;
+}
+
+.col-100 {
+    width: 100px;
+    min-width: 100px;
+}
+
+.col-150 {
+    width: 150px;
+    min-width: 150px;
+}
+
+table.scroll {
+    display: flex;
+    flex-direction: column;
+    align-self: center;
+    max-height: 100%;
+}
+
+table.scroll thead {
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+    border: 1px solid black;
+    overflow-x: hidden;
+    margin-right: 16px;
+}
+
+table.scroll tbody {
+    display:flex;
+    width: 300px;
+    flex-direction: column;
+    flex-grow: 1;
+    flex-basis: auto;
+    overflow-x: scroll;
+    overflow-y: scroll;
+    border: 1px solid black;
 }
 
 ul#dropdown_list {
@@ -103,31 +199,13 @@ button#dropdown_header {
     white-space: nowrap;
 }
 
-table {
-    margin: 0px auto;
-}
-
-th {
-    background: #ccc;
-}
-
-tr.selected td {
-    background: yellow;
-}
-
-tr.editable td {
-    background: green;
-}
-
-td {
-    background: white;
-    cursor: default;
-}
-
 button.icon {
-    padding: 0px;
-    border-radius: initial;
-    width: 20px;
+    padding: 0px 2px;
+    border-radius: 2px 2px 2px 2px;
+    background: black;
+    color: white;
+    cursor: pointer;
+    border: 1px solid white;
 }
 
 button.icon:hover {
@@ -193,10 +271,10 @@ text {
 }
 
 .table_box_content {
-    background: red;
+    background: #00008B;
 }
 
-.editable .table_box_content {
+.table_box_content.proto {
     background: green;
 }
 
@@ -210,13 +288,194 @@ text {
     font-size: 14px;
 }
 </style>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js">
+
+<script src="/latest/script/jquery-3.2.0.min.js"></script>
+<script src="/latest/script/nunjucks-3.0.1.min.js"></script>
+
+<script id="result_template" type="x-nunjucks-template">
+<div id="resultTable" class="table">
+    <div class="thead">
+        <div class="tr">
+            {% for column in header %}
+            <div class="th" style="min-width:{{column.width}};max-width:{{column.width}};">{{column.name}}</div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="tbody" onscroll="$(this).siblings('.thead').get()[0].scrollLeft = this.scrollLeft;">
+        {% for item in items %}
+        <div class="tr">
+            {% for column in header %}
+            <div class="td" style="min-width:{{column.width}};max-width:{{column.width}};">{{item[column.field]}}</div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+</script>
+
+<script id="table_template" type="x-nunjucks-template">
+<div class="titlebar">
+    <div class="title">{{title}}</div>
+</div>
+<div class="content">
+    <div class="table">
+        <div class="thead">
+            <div class="tr">
+                {% for column in header %}
+                <div class="th" style="min-width:{{column.width}};max-width:{{column.width}};">{{column.name}}</div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="tbody" onscroll="$(this).siblings('.thead').get()[0].scrollLeft = this.scrollLeft;">
+            {% for item in items %}
+            {% if item.id === proto.id %}
+            <div class="tr buffer" data-id="{{proto.id}}">
+                {% for column in header %}
+                <div class="td" contenteditable="true" style="min-width:{{column.width}};max-width:{{column.width}};">{{proto[column.field]}}</div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="tr{% if item.id === select_id %} selected{% endif %}"{% if row_action %} onclick="{{row_action}}('{{item.id}}');"{% endif %}>
+                {% for column in header %}
+                <div class="td" style="min-width:{{column.width}};max-width:{{column.width}};">{{item[column.field]}}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endfor %}
+            {% if proto and proto.id === "" %}
+            <div class="tr buffer"{% if row_action %} onclick="{{row_action}}('{{proto.id}}');"{% endif %}>
+                {% for column in header %}
+                <div class="td" contenteditable="true" style="min-width:{{column.width}};max-width:{{column.width}};">{{proto[column.field]}}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div style="text-align:center;padding-top:10px;">
+        {% for action in actions %}
+        <button style="cursor:pointer;" onclick="{{action.name}}();">{{action.text}}</button>
+        {% endfor %}
+    </div>
+</div>
+</script>
+<script id="table_box" type="x-nunjucks-template">
+<div class="table_box" style="display:flex;flex-direction:column;padding:2px;">
+  <div class="titlebar">
+    <div style="flex-basis:20%;"></div>
+    <div class="title">{{title}}</div>
+    <div style="flex-basis:20%;text-align:right;">
+      {% if not edit_mode %}
+      <button class="icon" onclick="delete_bound_scale('{{id}}');">x</button>
+      {% endif %}
+    </div>
+  </div>
+  <div class="table_box_content{% if edit_mode %} proto{% endif %}">
+    <div class="table" style="margin:5px;">
+      <div class="thead">
+        <div class="tr">
+        {% for column in header %}
+          <div class="th" style="min-width:{{column.width}};max-width:{{column.width}};">{{column.name}}</div>
+        {% endfor %}
+        </div>
+      </div>
+      <div class="tbody" onscroll="function(){$(this).siblings('.thead').get()[0].scrollLeft = this.scrollLeft;}">
+        {% for arg in args %}
+        <div class="tr">
+          {% for column in header %}
+          <div class="td" style="min-width:{{column.width}};max-width:{{column.width}};">{{arg[loop.index0]}}</div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+</script>
+<script id="dropdown_template" type="x-nunjucks-template">
+<div id="dropdown">
+  <button id="dropdown_header">{{choice}} &#x25bc;</button>
+  <ul id="dropdown_list">
+    {% for cf in items %}
+    <li onclick="select_binding('{{cf.id}}');">{{cf.name}}</li>
+    {% endfor %}
+  </ul>
+</div>
+</script>
+<script id="options_template" type="x-nunjucks-template">
+<div id="sortsView">
+    <details open>
+        <summary>Sorts</summary>
+        <div class="options">
+            {% for sort in sorts %}
+            <button class="option sort" onclick="create_node('{{sort.id}}');">{{sort.name}}</button>
+            {% endfor %}
+        </div>
+    </details>
+</div>
+</script>
+<script id="options_template2" type="x-nunjucks-template">
+<div id="optionsView">
+    {% for name,node in nodes %}
+    <details class="nodeContext" open>
+        <summary>{{name}}</summary>
+        {% for prefix,options in node %}
+            <div class="options">
+                <span class="label" style="padding:5px;">{{ prefix }}:</span>
+                {% for opt in options %}
+                    {% if opt.pos %}
+                    <button class="role option {{opt.grp}}" onclick="create_rnode('{{name}}','{{prefix}}:{{opt.name}}','{{opt.pos}}','{{opt.sort}}');"
+                    >{{ opt.name }}[{{ opt.pos }}]</button>
+                    {% else %}
+                    <button class="attribute option {{opt.grp}}" onclick="toggle_attribute('{{name}}','{{prefix}}:{{opt.name}}','{{opt.grp}}');"
+                    >{{opt.name}}</button>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </details>
+    {% endfor %}
+    <details class="nodeContext" open>
+        <summary>Equalities</summary>
+        <div class="options">
+            {% for eq in equalities %}
+            <button class="equality option {{eq.grp}}" onclick="toggle_coreference('{{eq.lhs}}','{{eq.rhs}}','{{eq.grp}}')">{{eq.lhs}}={{eq.rhs}}</button>
+            {% endfor %}
+        </div>
+    </details>
+</div>
+</script>
+<script id="options_template3" type="x-nunjucks-template">
+<div id="optionsView">
+    {% for name,node in nodes %}
+    <h3 class="nodeContext" style="background:gray;">{{name}}</h3>
+        {% for prefix,options in node %}
+            <div class="options">
+                <div style="padding:5px;" class="label">{{ prefix }}:</div>
+                {% for opt in options %}
+                    {% if opt.pos %}
+                    <button class="role option {{opt.grp}}" style="padding:5px;" onclick="create_rnode('{{name}}','{{prefix}}:{{opt.name}}','{{opt.pos}}','{{opt.sort}}');"
+                    >{{ opt.name }}[{{ opt.pos }}]</button>
+                    {% else %}
+                    <button class="attribute option {{opt.grp}}" style="padding:5px;" onclick="toggle_attribute('{{name}}','{{prefix}}:{{opt.name}}','{{opt.grp}}');"
+                    >{{opt.name}}</button>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </details>
+    {% endfor %}
+        <h3 class="nodeContext" style="background:white;">Equalities</h3>
+        <div class="options">
+            {% for eq in equalities %}
+            <button class="equality option {{eq.grp}}" style="padding:5px;" onclick="toggle_coreference('{{eq.lhs}}','{{eq.rhs}}','{{eq.grp}}')">{{eq.lhs}}={{eq.rhs}}</button>
+            {% endfor %}
+        </div>
+</div>
 </script>
 <script>
 
+scrollbar_width = 16;
 queue = [];
-edit_mode = false;
-box_edit_mode = false;
 
 function abspath(url) {
 
@@ -236,6 +495,33 @@ function abspath(url) {
     return current_url + url
 }
 
+// scrollbar function from www.alexandre-gomes.com
+function getScrollBarWidth () {
+  var inner = document.createElement('p');
+  inner.style.width = "100%";
+  inner.style.height = "200px";
+
+  var outer = document.createElement('div');
+  outer.style.position = "absolute";
+  outer.style.top = "0px";
+  outer.style.left = "0px";
+  outer.style.visibility = "hidden";
+  outer.style.width = "200px";
+  outer.style.height = "150px";
+  outer.style.overflow = "hidden";
+  outer.appendChild (inner);
+
+  document.body.appendChild (outer);
+  var w1 = inner.offsetWidth;
+  outer.style.overflow = 'scroll';
+  var w2 = inner.offsetWidth;
+  if (w1 == w2) w2 = outer.clientWidth;
+
+  document.body.removeChild (outer);
+
+  return (w1 - w2);
+};
+
 function Point(x,y) {
     this.x = x;
     this.y = y;
@@ -251,7 +537,6 @@ function Node(sort) {
 
 function Graph() {
     this.nodes = {};
-    this.nextId = 1;
     this.ax = 10;
     this.ay = 10;
     this.radius = Math.sqrt(4*(this.ax)*(this.ay)/Math.PI); // give circle same area as rectangle for better looks
@@ -259,7 +544,7 @@ function Graph() {
 
 Graph.prototype = {
     add_node: function(sort) {
-        var nodeId = "t"+this.nextId++;
+        var nodeId = this.next_id(sort);
         this.nodes[nodeId] = new Node(sort);
         return nodeId;
     },
@@ -333,6 +618,20 @@ Graph.prototype = {
         var name = m.split(":")[1];
         var def = this.nodes[nodeId].def;
         def[prefix][name] = new Point(x,y);
+    },
+
+    next_id: function(sort) {
+        if( !(sort in this.nodes) ) {
+            return sort;
+        }
+        var i=2;
+        while(true) {
+            var id = sort + i;
+            if( !(id in this.nodes) ) {
+                return id;
+            }
+            i += 1;
+        }
     },
 
     is_rnode: function(nodeId) {
@@ -434,6 +733,7 @@ Graph.prototype = {
     },
 
     draw: function() {
+
         var group = document.createElementNS("http://www.w3.org/2000/svg","g");
         var $group = $(group);
 
@@ -443,6 +743,7 @@ Graph.prototype = {
 
             if(p !== null) {
                 if(this.is_rnode(key)) { // relation node
+
                     $group.prepend(this.svg_rnode(p.x,p.y));
 
                     var neighbors = key.split("#");
@@ -458,9 +759,13 @@ Graph.prototype = {
                         }
                     }
                 } else { // object node
-                    $group.prepend(this.svg_label(p.x,p.y,key.replace("t","#")));
-                    $group.prepend(this.svg_node(p.x,p.y,key,node.marked));
-                    $group.prepend(this.svg_label(p.x,p.y-(this.ay)-7,node.sort));
+                    // dirty solution to computing svg label dimensions
+                    var $label = this.svg_label(p.x,p.y,key);
+                    $("svg > g").append($label);
+                    var bbox = $label[0].getBBox();
+
+                    $group.prepend(this.svg_label(p.x,p.y,key));
+                    $group.prepend(this.svg_node(p.x,p.y,bbox.width,bbox.height,key,node.marked));
 
                     for(var key2 in node.corefs) {
                         if(key<key2) {
@@ -480,9 +785,8 @@ Graph.prototype = {
                 }
             }
         }
-
         $("svg > g").replaceWith($group);
-        
+
     },
 
     compute_edge: function(rx,ry,x,y) {
@@ -508,9 +812,11 @@ Graph.prototype = {
         }
     },
 
-    svg_node: function(x,y,id,marked) {
+    svg_node: function(x,y,width,height,id,marked) {
+        width += 10;
+        height += 10;
         var node = document.createElementNS("http://www.w3.org/2000/svg","rect");
-        var $node = $(node).attr({"data-id":id,"x":x-this.ax,"y":y-this.ay,"width":2*this.ax,"height":2*this.ay})
+        var $node = $(node).attr({"data-id":id,"x":x-(width/2),"y":y-(height/2),"width":width,"height":height})
                            .on("click",toggle_mark);
         if(marked) {
             $node.addClass("marked");
@@ -524,12 +830,20 @@ Graph.prototype = {
                              .text(text);
         return $label;
     },
+/*
+    svg_rnode: function(x,y) {
+        var rnode = document.createElementNS("http://www.w3.org/2000/svg","rect");
+        var $rnode = $(rnode).attr({"x":x-this.ax,"y":y-this.ay,"width":2*this.ax,"height":2*this.ay});
+        return $rnode;
+    },
+*/
 
     svg_rnode: function(x,y) {
         var rnode = document.createElementNS("http://www.w3.org/2000/svg","circle");
         var $rnode = $(rnode).attr({"cx":x,"cy":y,"r":this.radius});
         return $rnode;
     },
+
 
     svg_edge: function(x1,y1,x2,y2) {
         cmd = "M" + x1 + "," + y1 + "L" + x2 + "," + y2;
@@ -560,14 +874,15 @@ Graph.prototype = {
     }
 };
 
-graph = new Graph();
+graph = null;
 
-function create_node() {
+function create_node(sortName) {
 
     if(queue.length>0) { return; }
 
-    var sort = $(this).text();
-    var id = graph.add_node(sort);
+    var sort = sorts_table.get(id);
+
+    var id = graph.add_node(sortName);
     graph.set_mark(id,true);
 
     var action = $.Deferred();
@@ -579,17 +894,14 @@ function create_node() {
     $('html').css('cursor','copy');
 }
 
-function create_rnode() {
+function create_rnode(obj,m,role,sort) {
 
     if(queue.length>0) { return; }
 
-    var $this = $(this);
-    var obj = $this.data("obj");
-    var m = $this.data("attr");
-    var sort = $this.data("sort");
-    var role = $this.data("role");
-
     var nodes = [];
+    role = parseInt(role);
+    sort = sort.split(",");
+
     for(var i=0; i<sort.length; ++i) {
 
         if(i+1 !== role) {
@@ -621,15 +933,11 @@ function create_rnode() {
     $('html').css('cursor','copy');
 }
 
-function toggle_attribute() {
+function toggle_attribute(nodeId,m,grp) {
 
     if(queue.length>0) { return; }
 
-    var $this = $(this);
-    var nodeId = $this.data("obj");
-    var m = $this.data("attr");
-
-    if($this.hasClass("all") || $this.hasClass("some")) {
+    if(grp === "all" || grp === "some") {
         graph.add_attribute(nodeId,m);
 
         var action = $.Deferred();
@@ -640,10 +948,10 @@ function toggle_attribute() {
         queue.push(action);
         $('html').css('cursor','copy');
 
-    } else if($this.hasClass("def")) {
+    } else if(grp === "def") {
         graph.remove_attribute(nodeId,m);
         graph.draw();
-        solve();
+        solve(bindings_view.selectId);
     }
 }
 
@@ -655,712 +963,786 @@ function toggle_mark() {
     var marked = graph.is_marked(nodeId);
     graph.set_mark(nodeId,!marked);
     graph.draw();
-    solve();
+    solve(bindings_view.selectId);
 
 }
 
-function toggle_coreference() {
+function toggle_coreference(nodeId1,nodeId2,grp) {
     if(queue.length>0) { return; }
 
-    var $this = $(this);
-    var nodeId1 = $this.data("lhs");
-    var nodeId2 = $this.data("rhs");
-
-    if($this.hasClass("all") || $this.hasClass("some")) {
+    if(grp === "all" || grp === "some") {
         graph.add_coreference(nodeId1,nodeId2);
 
-    } else if($this.hasClass("def")) {
+    } else if(grp === "def") {
         graph.remove_coreference(nodeId1,nodeId2);
     }
     graph.draw();
-    solve();
+    solve(bindings_view.selectId);
 
 }
 
-function get_scales() {
-    $.ajax({
-        url: abspath("get_scales"),
-        dataType: "json"
-    }).done(function(data,status,jqxhr) {
+function init_page1() {
 
-        var tbody = $("<tbody>").attr("id","scales");
-        $.each(data,function(index,row){
-            var id = row[0];
-            var name = row[1];
-            var arity = row[2];
-            var tr = $("<tr>").attr("data-id",id)
-                              .on("click",select_scale)
-                              .on("dblclick",edit_scale);
-            var td1 = $("<td>").text(name);
-            var td2 = $("<td>").text(arity);
-            tr.append(td1).append(td2);
-            tbody.append(tr);
+    if(scales_view.selectId === null) {
+        if(scales_table.items.length) {
+            select_scale(scales_table.items[0].id);
+        }
+    } else {
+        scales_view.render();
+        attributes_view.render();
+    }
+}
+
+function init_page2() {
+
+    if(bindings_view.selectId === null) {
+
+        scales_view_2.render();
+        if(bindings_table.items.length) {
+            select_binding(bindings_table.items[0].id);
+        }
+
+    } else {
+        bindings_view.render();
+        scales_view_2.render();
+        sorts_view.render();
+        columns_view.render();
+        bound_scales_view.render();
+    }
+
+}
+
+function init_page3() {
+
+    // render dropdown
+    var source = $("script#dropdown_template").html();
+    var choice = "<empty>";
+    if(bindings_view.selectId === null) {
+        if(bindings_table.items.length) {
+            bindings_view.selectId = bindings_table.items[0].id;
+        }
+    }
+
+    if(bindings_view.selectId !== null) {
+        choice = bindings_table.get(bindings_view.selectId).name
+        select_binding(bindings_view.selectId).done(function(){
+
+            // set sorts
+            var source2 = $("script#options_template").html();
+            var context2 = {"sorts":sorts_table.items};
+            var $sortsView = $(nunjucks.renderString(source2,context2));
+            $("#sortsView").replaceWith($sortsView);
         });
-        $("tbody#scales").replaceWith(tbody);
-        tbody.find("tr:first").trigger("click");
+    }
+
+    var context = {
+        "choice": choice,
+        "items": bindings_table.items,
+    }
+
+    var $dropdown = $(nunjucks.renderString(source,context));
+    $("#dropdown").replaceWith($dropdown);
+}
+
+function List(urls) {
+    this.items = [];
+    this.urls = urls;
+}
+
+List.prototype = {
+
+    empty: function() {
+        this.items = [];
+    },
+
+    create: function(obj,backref) {
+
+        var args = (typeof backref !== 'undefined') ? [obj,backref] : [obj];
+
+        var that = this;
+        return $.ajax({
+            url: this.urls["create"],
+            type: "POST",
+            data: JSON.stringify(args),
+            contentType: "application/json",
+        }).done(function(insertId,status,jqxhr) {
+            obj.id = insertId;
+            that.items.push(obj);
+        });
+    },
+
+    load: function(params) {
+        var that = this;
+        return $.ajax({
+            url: this.urls["read"],
+            data: params,
+            dataType: "json",
+        }).done(function(items,status,jqxhr) {
+            that.items = items;
+        });
+    },
+
+    update: function(obj,backref) {
+
+        var args = (typeof backref !== 'undefined') ? [obj,backref] : [obj];
+
+        var that = this;
+        return $.ajax({
+            url: this.urls["update"],
+            type: "POST",
+            data: JSON.stringify(args),
+            contentType: "application/json",
+        }).done(function(updateId,status,jqxhr) {
+            for(var i=0;i<that.items.length;++i) {
+                if(that.items[i].id === updateId) {
+                    that.items[i] = obj;
+                    break;
+                }
+            }
+        });
+    },
+
+    del: function(id) {
+        var that = this;
+        return $.ajax({
+            url: this.urls["delete"],
+            type: "POST",
+            data: JSON.stringify([id]),
+            contentType: "application/json",
+        }).done(function(deleteId,status,jqxhr) {
+            for(var i=0;i<that.items.length;++i) {
+                if(that.items[i].id === deleteId) {
+                    that.items.splice(i,1);
+                    break;
+                }
+            }
+        });
+    },
+
+    get: function(id) {
+        for(var i=0;i<this.items.length;++i) {
+            if(this.items[i].id === id) {
+                return this.items[i];
+            }
+        }
+
+        return undefined;
+    }
+}
+
+function Scale(id,name,arity) {
+    this.id = id;
+    this.name = name;
+    this.arity = arity;
+}
+
+function Attribute(id,name,sqldef) {
+    this.id = id;
+    this.name = name;
+    this.sqldef = sqldef;
+}
+
+function ContextFamily(id,name,host,database) {
+    this.id = id;
+    this.name = name;
+    this.host = host;
+    this.database = database;
+}
+
+function Sort(id,name,output) {
+    this.id = id;
+    this.name = name;
+    this.output = output;
+}
+
+function SQLColumn(id,name,sqltype) {
+    this.id = id;
+    this.name = name;
+    this.sqltype = sqltype;
+}
+
+function BoundScale(id,scale,args) {
+    this.id = id;
+    this.scale = scale;
+    this.args = args;
+}
+
+function BoundScalesList(urls) {
+    this.items = [];
+    this.urls = urls;
+}
+
+BoundScalesList.prototype = {
+
+    empty: function() {
+        this.items = [];
+    },
+
+    create: function(obj,backref) {
+        var that = this;
+        return $.ajax({
+            url: this.urls["create"],
+            type: "POST",
+            data: JSON.stringify([obj,backref]),
+            contentType: "application/json",
+        }).done(function(insertId,status,jqxhr) {
+            obj.id = insertId;
+            that.items.push(obj);
+        });
+    },
+
+    load: function(params) {
+        var that = this;
+        return $.ajax({
+            url: this.urls["read"],
+            data: params,
+            dataType: "json",
+        }).done(function(items,status,jqxhr){
+            that.items = items;
+        });
+    },
+
+    del: function(id) {
+        var that = this;
+        return $.ajax({
+            url: this.urls["delete"],
+            type: "POST",
+            data: JSON.stringify([id]),
+            contentType: "application/json",
+        }).done(function(deleteId,status,jqxhr) {
+            for(var i=0;i<that.items.length;++i) {
+                if(that.items[i].id === deleteId) {
+                    that.items.splice(i,1);
+                    break;
+                }
+            }
+        });
+    },
+}
+
+scales_table = new List({
+                             "create": abspath("create_scale"),
+                             "read": abspath("read_scales"),
+                             "update": abspath("update_scale"),
+                             "delete": abspath("delete_scale"),
+                         });
+attributes_table = new List({
+                                 "create": abspath("create_attribute"),
+                                 "read": abspath("read_attributes"),
+                                 "update": abspath("update_attribute"),
+                                 "delete": abspath("delete_attribute"),
+                             });
+bindings_table = new List({
+                               "create": abspath("create_binding"),
+                               "read": abspath("read_bindings"),
+                               "update": abspath("update_binding"),
+                               "delete": abspath("delete_binding"),
+                           });
+sorts_table = new List({
+                             "read": abspath("read_sorts"),
+                             "update": abspath("update_sort"),
+                        });
+columns_table = new List({ "read": abspath("table_columns"), });
+
+bound_scales = new BoundScalesList({
+                                        "create": abspath("create_bound_scale"),
+                                        "read": abspath("read_bound_scales"),
+                                        "delete": abspath("delete_bound_scale"),
+                                   });
+
+function BoundScalesView(header,model,root) {
+    this.header = header;
+    this.model = model;
+    this.root = root;
+    this.proto = null;
+}
+
+BoundScalesView.prototype = {
+
+    render: function() {
+        var source = $("script#table_box").html();
+        var $root = $("#"+this.root);
+        $root.empty();
+
+        if(this.proto !== null) {
+            var context = {"id":this.proto.id, "title":this.proto.scale.name,"header":this.header,"args":this.proto.args,"edit_mode":true};
+            var $box = $(nunjucks.renderString(source,context));
+            $root.append($box);
+        }
+
+        for(var i=0;i<this.model.items.length;++i) {
+            var bs = this.model.items[i];
+            var context = {"id":bs.id, "title":bs.scale.name,"header":this.header,"args":bs.args,"edit_mode":false};
+            var $box = $(nunjucks.renderString(source,context));
+            $root.append($box);
+        }
+
+    }
+}
+
+function Column(field,name,width) {
+    this.field = field;
+    this.name = name;
+    this.width = width;
+}
+
+function TableView(title,header,model,root,row_action,actions) {
+    this.title = title;
+    this.header = header;
+    this.model = model;
+    this.row_action = row_action;
+    this.actions = actions;
+    this.root = root;
+    this.template = "table_template";
+    this.selectId = null;
+    this.proto = null;
+}
+
+TableView.prototype = {
+
+    render: function() {
+
+        var source = $("script#table_template").html();
+        var context = {
+                           "title":this.title,
+                           "header":this.header,
+                           "items":this.model.items,
+                           "proto":this.proto,
+                           "select_id":this.proto ? null : this.selectId,
+                           "row_action":this.proto ? null : this.row_action,
+                           "actions":this.actions,
+                      };
+        var $box = $(nunjucks.renderString(source,context));
+
+        $("#"+this.root).empty().append($box);
+        $box.find('.td[contenteditable="true"]:first').focus();
+
+    },
+}
+
+var scales_header = [ new Column("name","Name","200px"), new Column("arity","Arity","100px") ];
+var attributes_header = [ new Column("name","Attribute","100px"), new Column("sqldef","SQL Definition","400px") ];
+var bindings_header = [ new Column("name","Name","100px"), new Column("host","Host","100px"), new Column("database","Database","100px") ];
+var sorts_header = [ new Column("name","Table","125px"), new Column("output","Output","225px") ];
+var columns_header = [ new Column("name","Column","150px"), new Column("sqltype","Type","150px") ];
+
+scales_view = new TableView("Conceptual Scales",scales_header,scales_table,"scales","select_scale",[
+        { "name":"new_scale", "text":"new", "action":new_scale },
+        { "name":"edit_scale", "text":"edit/save", "action":edit_scale },
+        { "name":"delete_scale", "text":"delete", "action":delete_scale },
+    ]);
+scales_view_2 = new TableView("Conceptual Scales",scales_header,scales_table,"scales_2","select_scale_2",[]);
+
+attributes_view = new TableView("Attributes",attributes_header,attributes_table,"attributes","select_attribute",[
+        { "name":"new_attribute", "text":"new", "action":new_attribute },
+        { "name":"edit_attribute", "text":"edit/save", "action":edit_attribute },
+        { "name":"delete_attribute", "text":"delete", "action":delete_attribute },
+    ]);
+
+bindings_view = new TableView("Context Families",bindings_header,bindings_table,"bindings","select_binding",[
+        { "name":"new_binding", "text":"new", "action":new_binding },
+        { "name":"edit_binding", "text":"edit/save", "action":edit_binding },
+        { "name":"delete_binding", "text":"delete", "action":delete_binding },
+    ]);
+
+sorts_view = new TableView("Database: Tables",sorts_header,sorts_table,"sorts","select_sort",[
+        { "name":"edit_sort", "text":"edit/save", "action":edit_sort },
+    ]);
+
+columns_view = new TableView("Columns",columns_header,columns_table,"columns","select_column",[
+        { "name":"set_output", "text":"output", "action":set_output },
+        { "name":"bind_0", "text":"bind-0", "action":bind_0 },
+        { "name":"bind_1", "text":"bind-1", "action":bind_1 },
+    ]);
+
+var bound_scales_header = [{"name":"Parameter","width":"100px"}, {"name":"Column","width":"200px"}]
+bound_scales_view = new BoundScalesView(bound_scales_header,bound_scales,"bound_scales");
+
+function select_scale(id) {
+    id = parseInt(id);
+    attributes_table.load({"id":id})
+                    .done(function() {
+                              scales_view.selectId = id;
+                              scales_view.render();
+                              attributes_view.selectId = null;
+                              attributes_view.render();
+                          });
+
+}
+
+function select_attribute(id) {
+    id = parseInt(id);
+    attributes_view.selectId = id;
+    attributes_view.render();
+}
+
+function select_binding(id) {
+    id = parseInt(id);
+    return $.when(
+        sorts_table.load({"id":id}),
+        bound_scales.load({"id":id})
+    ).done(function() {
+        bindings_view.selectId = id;
+        bindings_view.render();
+        bound_scales_view.proto = null;
+        bound_scales_view.render();
+        scales_view_2.selectId = null;
+        scales_view_2.render();
+        if(sorts_table.items.length) {
+            select_sort(sorts_table.items[0].id);
+        } else {
+            sorts_view.render();
+            columns_table.empty();
+            columns_view.render();
+        }
     });
 }
 
-function select_scale() {
-
-    if(edit_mode) { return; }
-
-    var $this = $(this);
-    if($this.hasClass("selected")) {
-        return;
-    } else {
-        $this.siblings().removeClass("selected");
-        $this.addClass("selected");
-    }
-
-    var id = $(this).data("id");
-    $.ajax({
-        url: abspath("describe_scale"),
-        data: { "id":id },
-        dataType: "json",
-    }).done(function(data,status,jqxhr) {
-
-        var $tbody = $("<tbody>").attr("id","attributes")
-                                 .attr("data-scale",id);
-        $.each(data,function(index,row){
-            var tr = $("<tr>").on("click",select_attribute)
-                              .on("dblclick",edit_attribute)
-                              .attr("data-id",row[0]);
-            var td1 = $("<td>").text(row[1]);
-            var td2 = $("<td>").text(row[2]);
-            tr.append(td1).append(td2);
-            $tbody.append(tr);
-        });
-        $("tbody#attributes").replaceWith($tbody);
-    });
+function select_sort(id) {
+    columns_table.load({ "bindingId":bindings_view.selectId,
+                         "table":id, })
+                 .done(function() {
+                      sorts_view.selectId = id;
+                      sorts_view.render();
+                      columns_view.selectId = null;
+                      columns_view.render();
+                  });
 }
 
-function select_attribute() {
+function select_column(id) {
+    columns_view.selectId = id;
+    columns_view.render();
+}
 
-    if(edit_mode) { return; }
+function new_scale() {
 
-    var $this = $(this);
-    if($this.hasClass("selected")) {
-        $this.removeClass("selected");
-    } else {
-        $this.siblings().removeClass("selected");
-        $this.addClass("selected");
-    }
+    scales_view.selectId = null;
+    scales_view.proto = new Scale("","","");
+    scales_view.render();
+    attributes_table.empty();
+    attributes_view.selectId = null;
+    attributes_view.proto = null;
+    attributes_view.render();
+}
+
+function new_attribute() {
+
+    attributes_view.selectId = null;
+    attributes_view.proto = new Attribute("","","");
+    attributes_view.render();
+}
+
+function new_binding() {
+
+    bindings_view.selectId = null;
+    bindings_view.proto = new ContextFamily("","","","");
+    bindings_view.render();
+    sorts_table.empty();
+    sorts_view.selectId = null;
+    sorts_view.proto = null;
+    sorts_view.render();
+    columns_table.empty();
+    columns_view.selectId = null;
+    columns_view.proto = null;
+    columns_view.render();
+    bound_scales.empty();
+    bound_scales_view.proto = null;
+    bound_scales_view.render();
+    scales_view_2.selectId = null;
+    scales_view_2.render();
 }
 
 function edit_scale() {
 
-    var $this = $(this);
-    var id = $this.data("id");
-    if($this.hasClass("editable")) {
-
-        var row = $this.find("td").map(function(index,td) {
-            return $(td).text().trim();
-        }).get();
-
-        var name = row[0];
-        var arity = row[1];
-
-        if(name == "" || !(/^[1-9]$/.test(arity))) {
-            return;
+    if(scales_view.proto === null) {
+        if(scales_view.selectId !== null) {
+            var obj = scales_table.get(scales_view.selectId);
+            scales_view.proto = new Scale(obj.id,obj.name,obj.arity);
+            scales_view.render();
         }
 
-        $this.find("td").attr("contenteditable","false");
-        $.ajax({
-            url: abspath("write_scale"),
-            type: "POST",
-            data: JSON.stringify({
-                "id": id,
-                "name": name,
-                "arity": arity,
-            }),
-            contentType: "application/json",
-        }).done(function(insertId,status,jqxhr) {
-            if(id == "") { $this.data("id",insertId); }
-            $this.removeClass("editable");
-            edit_mode = false;
-            $this.trigger("click");
-        });
-    } else if(edit_mode) {
-        return;
     } else {
-        edit_mode = true;
-        $this.find("td").attr("contenteditable","true");
-        $this.addClass("editable");
+        var $tr = $("#"+scales_view.root).find(".tr.buffer");
+        $tr.find(".td").each(function(i,td) {
+            scales_view.proto[scales_view.header[i].field] = $(td).text().trim();
+        });
+
+        if(scales_view.proto.id === "") {
+            scales_table.create(scales_view.proto)
+                        .done(function(insertId,status,jqxhr) {
+                             scales_view.proto = null;
+                             scales_view.selectId = insertId;
+                             scales_view.render();
+                         });
+        } else {
+            scales_table.update(scales_view.proto)
+                        .done(function(updateId,status,jqxhr) {
+                             scales_view.proto = null;
+                             scales_view.selectId = updateId;
+                             scales_view.render();
+                         });
+        }
+
+    }
+}
+
+function edit_attribute() {
+
+    if(attributes_view.proto === null) {
+        if(attributes_view.selectId !== null) {
+            var obj = attributes_table.get(attributes_view.selectId);
+            attributes_view.proto = new Attribute(obj.id,obj.name,obj.sqldef);
+            attributes_view.render();
+        }
+
+    } else {
+        var $tr = $("#"+attributes_view.root).find(".tr.buffer");
+        $tr.find(".td").each(function(i,td) {
+            attributes_view.proto[attributes_view.header[i].field] = $(td).text().trim();
+        });
+
+        if(attributes_view.proto.id === "") {
+            attributes_table.create(attributes_view.proto,scales_view.selectId)
+                            .done(function(insertId,status,jqxhr) {
+                                 attributes_view.proto = null;
+                                 attributes_view.selectId = insertId;
+                                 attributes_view.render();
+                             });
+        } else {
+            attributes_table.update(attributes_view.proto)
+                            .done(function(updateId,status,jqxhr) {
+                                 attributes_view.proto = null;
+                                 attributes_view.selectId = updateId;
+                                 attributes_view.render();
+                             });
+        }
+
+    }
+}
+
+function edit_binding() {
+
+    if(bindings_view.proto === null) {
+        if(bindings_view.selectId !== null) {
+            var obj = bindings_table.get(bindings_view.selectId);
+            bindings_view.proto = new ContextFamily(obj.id,obj.name,obj.host,obj.database);
+            bindings_view.render();
+        }
+
+    } else {
+        var $tr = $("#"+bindings_view.root).find(".tr.buffer");
+        $tr.find(".td").each(function(i,td) {
+            bindings_view.proto[bindings_view.header[i].field] = $(td).text().trim();
+        });
+
+        if(bindings_view.proto.id === "") {
+            bindings_table.create(bindings_view.proto)
+                          .done(function(insertId,status,jqxhr) {
+                               bindings_view.proto = null;
+                               bindings_view.selectId = insertId;
+                               bindings_view.render();
+                           });
+        } else {
+            bindings_table.update(bindings_view.proto)
+                          .done(function(updateId,status,jqxhr) {
+                               bindings_view.proto = null;
+                               bindings_view.selectId = updateId;
+                               bindings_view.render();
+                           });
+        }
+    }
+}
+
+function edit_sort() {
+
+    if(sorts_view.proto === null) {
+        if(sorts_view.selectId !== null) {
+            var obj = sorts_table.get(sorts_view.selectId);
+            sorts_view.proto = new Sort(obj.id,obj.name,obj.output);
+            sorts_view.render();
+        }
+
+    } else {
+        var $tr = $("#"+sorts_view.root).find(".tr.buffer");
+        $tr.find(".td").each(function(i,td) {
+            sorts_view.proto[sorts_view.header[i].field] = $(td).text().trim();
+        });
+
+        sorts_table.update(sorts_view.proto,bindings_view.selectId)
+                   .done(function(updateId,status,jqxhr) {
+                        sorts_view.proto = null;
+                        sorts_view.selectId = updateId;
+                        sorts_view.render();
+                    });
     }
 }
 
 function delete_scale() {
 
-    if(edit_mode) { return; }
-
-    var $this = $(this);
-    var id = $("tbody#scales tr.selected").first().data("id");
-
-    $.ajax({
-        url: abspath("delete_scale"),
-        type: "POST",
-        data: JSON.stringify(id),
-        contentType: "application/json",
-    }).done(function(data,status,jqxhr) {
-        get_scales();
-    });
-}
-
-function delete_binding() {
-
-    if(edit_mode) { return; }
-
-    var $this = $(this);
-    var id = $("tbody#bindings tr.selected").first().data("id");
-
-    $.ajax({
-        url: abspath("delete_binding"),
-        type: "POST",
-        data: JSON.stringify(id),
-        contentType: "application/json",
-    }).done(function(data,status,jqxhr) {
-        get_bindings();
-    });
+    if(scales_view.selectId !== null) {
+        scales_table.del(scales_view.selectId)
+                    .done(function() {
+                              scales_view.selectId = null;
+                              attributes_table.empty();
+                              scales_view.render();
+                              attributes_view.render();
+                          });
+    }
 }
 
 function delete_attribute() {
 
-    if(edit_mode) { return; }
-
-    var $this = $(this);
-    var $row = $("tbody#attributes tr.selected").first();
-
-    if($row.length != 0) {
-        var id = $row.data("id");
-        $.ajax({
-            url: abspath("delete_attribute"),
-            type: "POST",
-            data: JSON.stringify(id),
-            contentType: "application/json",
-        }).done(function(data,status,jqxhr) {
-            $row.remove();
-        });
+    if(attributes_view.selectId !== null) {
+        attributes_table.del(attributes_view.selectId)
+                        .done(function() {
+                             attributes_view.selectId = null;
+                             attributes_view.render();
+                         });
     }
 }
 
-function create_attribute() {
+function delete_binding() {
 
-    if(edit_mode) { return; }
-
-    var tr = $("<tr>").addClass("editable");
-    var td1 = $("<td>").attr("contenteditable","true");
-    var td2 = $("<td>").attr("contenteditable","true");
-    tr.append(td1)
-      .append(td2)
-      .on("click",select_attribute)
-      .on("dblclick",edit_attribute)
-      .attr("data-id","");
-    var tbody = $("tbody#attributes")
-    tbody.append(tr);
-    tr.find("td:first").focus()
-}
-
-function edit_attribute() {
-
-    var $this = $(this);
-    var id = $this.data("id");
-    var scaleId = $this.parent("tbody").data("scale");
-
-    if($this.hasClass("editable")) {
-
-        var row = $this.find("td").map(function(index,td) {
-            return $(td).text().trim();
-        }).get();
-
-        var name = row[0];
-        var sqldef = row[1];
-
-        if(name == "" || sqldef == "") {
-            return;
-        }
-
-        $this.find("td").attr("contenteditable","false");
-        $.ajax({
-            url: abspath("write_attribute"),
-            data: {
-                "id": id,
-                "scale": scaleId,
-                "name": name,
-                "sqldef": sqldef,
-            },
-        }).done(function(insertId,status,jqxhr) {
-            if(id == "") { $this.data("id",insertId); }
-            $this.removeClass("editable");
-            edit_mode = false;
-        });
-    } else if(edit_mode) {
-        return;
-    } else {
-        edit_mode = true;
-        $this.find("td").attr("contenteditable","true");
-        $this.addClass("editable");
+    if(bindings_view.selectId !== null) {
+        bindings_table.del(bindings_view.selectId)
+                      .done(function() {
+                           bindings_view.selectId = null;
+                           bindings_view.proto = null;
+                           bindings_view.render();
+                           sorts_table.empty();
+                           sorts_view.selectId = null;
+                           sorts_view.proto = null;
+                           sorts_view.render();
+                           columns_table.empty();
+                           columns_view.selectId = null;
+                           columns_view.proto = null;
+                           columns_view.render();
+                           bound_scales.empty();
+                           bound_scales_view.proto = null;
+                           bound_scales_view.render();
+                           scales_view_2.selectId = null;
+                           scales_view_2.render();
+                       });
     }
 }
 
-function get_bindings() {
-    $.ajax({
-        url: abspath("get_bindings"),
-        dataType: "json"
-    }).done(function(data,status,jqxhr){
-
-        var tbody = $("<tbody>").attr("id","bindings");
-        $.each(data,function(index,row) {
-            var id = row[0];
-            var name = row[1];
-            var host = row[2];
-            var database = row[3];
-
-            var tr = $("<tr>").attr("data-id",id)
-                              .on("click",select_binding)
-                              .on("dblclick",edit_binding);
-            var td1 = $("<td>").text(host);
-            var td2 = $("<td>").text(database);
-            var td3 = $("<td>").text(name);
-            tr.append(td1).append(td2).append(td3);
-            tbody.append(tr);
-        });
-        $("tbody#bindings").replaceWith(tbody);
-        tbody.find("tr:first").trigger("click");
-    });
+function delete_bound_scale(id) {
+    id = parseInt(id);
+    bound_scales.del(id)
+                .done(function(){
+                     bound_scales_view.render();
+                 });
 }
 
-function select_binding() {
+function set_output() {
 
-    if(edit_mode) { return; }
+    if(columns_view.selectId !== null) {
+        var column = columns_table.get(columns_view.selectId);
+        var sort = sorts_table.get(sorts_view.selectId);
+        sorts_view.proto = new Sort(sort.id,sort.name,"{0}."+column.name);
 
-    var $this = $(this);
-    var id = $this.data("id");
-
-    if($this.hasClass("selected")) {
-       return;
-    } else {
-        $this.siblings().removeClass("selected");
-        $("#bound_scales").data("binding",id)
-                          .empty();
-        $this.addClass("selected");
+        sorts_table.update(sorts_view.proto,bindings_view.selectId)
+                   .done(function(updateId,status,jqxhr) {
+                        sorts_view.proto = null;
+                        sorts_view.selectId = updateId;
+                        sorts_view.render();
+                    });
     }
+}
 
-    $.ajax({
-        url: abspath("describe_binding"),
-        data: { "id":id },
-        dataType: "json",
-    }).done(function(data,status,jqxhr) {
+function bind_0() {
 
-        $.each(data,function(boundScaleId,boundScale) {
-            var html = $("template#table_box").html();
-            var box = $(html);
-            box.on("dblclick",edit_binding_box)
-               .attr("data-id",boundScaleId)
-               .attr("data-scale",boundScale["scale"])
-               .find(".title")
-               .text(boundScale["name"]);
-            box.find(".js-delete_binding_box").on("click",delete_binding_box);
-            tbody = box.find("tbody");
-            $.each(boundScale["bindings"],function(index,pair) {
-                var tr = $("<tr>");
-                var td1 = $("<td>").text(pair[0]);
-                var td2 = $("<td>").text(pair[1]);
-                tr.append(td1).append(td2);
-                tbody.append(tr);
-            });
-            $("#bound_scales").append(box);
-        });
-    });
+    var bindingId = bindings_view.selectId;
+    var table = sorts_view.selectId;
+    var column = columns_view.selectId;
+    var bs = bound_scales_view.proto;
 
-    var row = $this.find("td").map(function(index,td) {
-        return $(td).text().trim();
-    }).get();
-
-    var host = row[0];
-    var database = row[1];
-
-    var tbody2 = $("<tbody>").attr("id","columns");
-    $("tbody#columns").replaceWith(tbody2);
-
-    $.ajax({
-        url: abspath("get_columns"),
-        data: {
-            "binding": id,
-            "host": host,
-            "database": database,
-        },
-        dataType: "json",
-    }).done(function(data,status,jqxhr) {
-
-        $.each(data,function(index,row) {
-            var table_name = row[0];
-            var column_name = row[1];
-            var output_column = row[2];
-
-            var tr = $("<tr>").on("click",select_column);
-            var td1 = $("<td>").text(table_name);
-            var td2 = $("<td>").text(column_name);
-            tr.append(td1).append(td2);
-            if(output_column) {
-                tr.addClass("selected");
+    var save = true;
+    if(column !== null && bs !== null) {
+        for(var i=0;i<bs.args.length;++i) {
+            var pair = bs.args[i];
+            if(pair[0] === 0) {
+                pair[1] = table + "." + column;
             }
-
-            tbody2.append(tr);
-        });
-    });
-}
-
-function create_scale() {
-
-    if(edit_mode) { return; }
-
-    var tr = $("<tr>");
-    var td1 = $("<td>").attr("contenteditable","true");
-    var td2 = $("<td>").attr("contenteditable","true");
-
-    tr.append(td1)
-      .append(td2)
-      .on("click",select_scale)
-      .on("dblclick",edit_scale)
-      .attr("data-id","");
-
-    var tbody = $("tbody#scales")
-    tbody.append(tr);
-    tr.siblings().removeClass("selected");
-
-    var tbody2 = $("<tbody>").attr("id","attributes")
-                             .attr("data-scale","");
-    $("tbody#attributes").replaceWith(tbody2);
-
-    tr.trigger("dblclick");
-    tr.find("td:first").focus();
-}
-
-function create_binding() {
-
-    if(edit_mode) { return; }
-
-    var tr = $("<tr>");
-    var td1 = $("<td>").attr("contenteditable","true");
-    var td2 = $("<td>").attr("contenteditable","true");
-    var td3 = $("<td>").attr("contenteditable","true");
-
-    tr.append(td1)
-      .append(td2)
-      .append(td3)
-      .attr("data-id","")
-      .on("click",select_binding)
-      .on("dblclick",edit_binding);
-
-    var tbody = $("tbody#bindings")
-    tbody.append(tr);
-    tr.siblings().removeClass("selected");
-
-    var tbody2 = $("<tbody>").attr("id","columns");
-    $("tbody#columns").replaceWith(tbody2);
-
-    $("#bound_scales").data("binding","")
-                      .empty();
-
-    tr.trigger("dblclick");
-    tr.find("td:first").focus();
-}
-
-function edit_binding() {
-
-    var $this = $(this);
-    var id = $this.data("id");
-    if($this.hasClass("editable")) {
-
-        var row = $this.find("td").map(function(index,td) {
-            return $(td).text().trim();
-        }).get();
-
-        var host = row[0];
-        var database = row[1];
-        var binding = row[2];
-
-        if(host == "" || database == "" || row == "") {
-            return;
-        }
-
-        $this.find("td").attr("contenteditable","false");
-        $.ajax({
-            url: abspath("write_binding"),
-            data: {
-                "id": id,
-                "name": binding,
-                "host": host,
-                "database": database,
-            },
-        }).done(function(insertId,status,jqxhr) {
-            if(id == "") { $this.data("id",insertId); }
-            $this.removeClass("editable");
-            edit_mode = false;
-            $this.trigger("click");
-        });
-    } else if(edit_mode) {
-        return;
-    } else {
-        edit_mode = true;
-        $this.addClass("editable");
-        $this.find("td").attr("contenteditable","true");
-    }
-}
-
-function create_binding_box() {
-
-    if(box_edit_mode) { return; }
-
-    var $this = $(this);
-    var scaleId = $this.data("id");
-    var arity = $this.data("arity");
-
-    var html = $("template#table_box").html();
-    var $box = $(html);
-    var $titlebar = $box.find(".title")
-                        .attr("contenteditable","true");
-    var $tbody = $box.find("tbody");
-
-    $box.attr("data-id","")
-        .attr("data-scale",scaleId)
-        .on("dblclick",edit_binding_box)
-        .find(".js-delete_binding_box").on("click",delete_binding_box)
-
-    for(var i=0;i<arity;++i) {
-        var tr = $("<tr>");
-        var td1 = $("<td>").text(i);
-        var td2 = $("<td>").text("");
-        tr.append(td1).append(td2);
-        $tbody.append(tr);
-    }
-    $("#bound_scales").prepend($box);
-    $box.trigger("dblclick")
-}
-
-function edit_binding_box() {
-
-    var $this = $(this);
-    var $box = $this.closest(".table_box");
-    var $frame = $this.closest("#bound_scales");
-    var $titlebar = $box.find(".title");
-    var $tbody = $box.find("tbody");
-
-    var id = $box.data("id");
-    var scaleId = $box.data("scale");
-    var bindingId = $frame.data("binding");
-
-    if($box.hasClass("editable")) {
-        var name = $titlebar.text().trim();
-        if(name == "") { return; }
-        var bindings = {};
-        $tbody.find("tr").each(function(i,tr) {
-            row = $(tr).find("td").map(function(j,td) {
-                    return $(td).text().trim();
-                }).get();
-            bindings[row[0]] = row[1];
-        });
-
-        for(var arg in bindings) {
-            if(bindings[arg] == "") { return; }
-        }
-
-        $titlebar.attr("contenteditable","false");
-        $.ajax({
-            url: abspath("write_bound_scale"),
-            type: "POST",
-            data: JSON.stringify({
-                "id": id,
-                "name": name,
-                "scaleId": scaleId,
-                "bindingId": bindingId,
-                "bindings": bindings,
-            }),
-            contentType: "application/json",
-        }).done(function(insertId,status,jqxhr) {
-            if(id == "") { $this.data("id",insertId); }
-            $box.removeClass("editable");
-            box_edit_mode = false;
-        });
-    } else if(box_edit_mode) {
-        return;
-    } else {
-        box_edit_mode = true;
-        $box.addClass("editable");
-        $titlebar.attr("contenteditable","true");
-    }
-}
-
-function delete_binding_box() {
-
-    if(box_edit_mode) { return; }
-
-    var $this = $(this);
-    var $box = $this.closest(".table_box");
-    var id = $box.data("id");
-
-    $.ajax({
-        url: abspath("delete_bound_scale"),
-        type: "POST",
-        data: JSON.stringify(id),
-        contentType: "application/json",
-    }).done(function(data,status,jqxhr) {
-        $box.remove()
-    });
-}
-
-function select_column() {
-    var $this = $(this);
-
-    var row = $this.find("td").map(function(index,td) {
-        return $(td).text().trim();
-    }).get();
-
-    var bindingId = $("#bound_scales").data("binding");
-    var table = row[0];
-    var column = row[1];
-
-    if(box_edit_mode) {
-        $("#bound_scales .editable tbody td:empty").first().text(table+"."+column)
-    } else {
-        if($this.hasClass("selected")) {
-            $.ajax({
-                url: abspath("remove_output_column"),
-                type: "POST",
-                data: JSON.stringify({
-                    "binding": bindingId,
-                    "table": table,
-                    "column": column,
-                }),
-                contentType: "application/json",
-            }).done(function(data,status,jqxhr) {
-                $this.removeClass("selected");
-            });
-        } else {
-            $.ajax({
-                url: abspath("add_output_column"),
-                type: "POST",
-                data: JSON.stringify({
-                    "binding": bindingId,
-                    "table": table,
-                    "column": column,
-                }),
-                contentType: "application/json",
-            }).done(function(data,status,jqxhr) {
-                $this.addClass("selected");
-            });
-        }
-    }
-}
-
-function get_scales_2() {
-
-    $.ajax({
-        url: abspath("get_scales"),
-        dataType: "json",
-    }).done(function(data,status,jqxhr) {
-
-        var tbody = $("<tbody>").attr("id","scales");
-        $.each(data,function(index,row){
-            var id = row[0];
-            var name = row[1];
-            var arity = row[2];
-            var tr = $("<tr>").attr("data-id",id)
-                              .attr("data-arity",arity)
-                              .on("click",create_binding_box);
-            var td1 = $("<td>").text(name);
-            var td2 = $("<td>").text(arity);
-            tr.append(td1).append(td2);
-            tbody.append(tr);
-        });
-        $("tbody#scales").replaceWith(tbody);
-    });
-}
-
-function get_sorts() {
-
-    $this = $(this);
-    var id = $this.data("id");
-    var name = $this.text();
-    $dropdown_header = $("button#dropdown_header");
-    $dropdown_header.html(name+" &#x25bc;").data("id",id);
-
-    $.ajax({
-        url: abspath("get_sorts"),
-        data: { "binding": id },
-        dataType: "json",
-
-    }).done(function(data,status,jqxhr) {
-
-        var $sortsView = $("<div>").attr("id","sortsView");
-        var $details = $("<details>").prop("open",true);
-        $("<summary>").text("Sorts").appendTo($details);
-        var $div = $("<div>").addClass("options");
-        $.each(data,function(index,sort) {
-            $("<button>").addClass("option").addClass("sort").text(sort).on("click",create_node).appendTo($div);
-        });
-        $details.append($div);
-        $sortsView.append($details);
-        $("#sortsView").replaceWith($sortsView);
-    });
-}
-
-function get_sorts_and_bindings() {
-    $.ajax({
-        url: abspath("get_sorts_and_bindings"),
-        dataType: "json",
-    }).done(function(data,status,jqxhr) {
-
-        var bindingId = data["bindingId"];
-
-        // set sorts
-        var $sortsView = $("<div>").attr("id","sortsView");
-        var $details = $("<details>").prop("open",true);
-        $("<summary>").text("Sorts").appendTo($details);
-        var $div = $("<div>").addClass("options");
-        $.each(data["sorts"],function(index,sort) {
-            $("<button>").addClass("option").addClass("sort").text(sort).on("click",create_node).appendTo($div);
-        });
-        $details.append($div);
-        $sortsView.append($details);
-        $("#sortsView").replaceWith($sortsView);
-
-        // set bindings
-        var $dropdown = $("<div>").attr("id","dropdown");
-        var $dropdown_header = $("<button>").attr("id","dropdown_header");
-        var $dropdown_list = $("<ul>").attr("id","dropdown_list");
-        $.each(data["bindings"],function(index,row) {
-            var id = row[0];
-            var name = row[1];
-            var host = row[2];
-            var database = row[3];
-            var li = $("<li>").attr("data-id",id)
-                              .text(name)
-                              .on("click",get_sorts);
-            $dropdown_list.append(li);
-
-            if(id === bindingId) {
-                $dropdown_header.html(name+" &#x25bc;")
-                                .data("id",id);
+            if(pair[1].trim() === "") {
+                var save = false;
             }
-        });
+        }
+    }
 
-        $dropdown.append($dropdown_header)
-                 .append($dropdown_list);
-
-        $("#dropdown").replaceWith($dropdown);
-    });
+    if(save === false) {
+        bound_scales_view.render();
+    } else {
+        bound_scales.create(bs,bindingId)
+                    .done(function() {
+                         bound_scales_view.proto = null;
+                         bound_scales_view.render();
+                     });
+    }
 }
 
-function solve() {
+function bind_1() {
+
+    var bindingId = bindings_view.selectId;
+    var table = sorts_view.selectId;
+    var column = columns_view.selectId;
+    var bs = bound_scales_view.proto;
+
+    var save = true;
+    if(column !== null && bs !== null) {
+        for(var i=0;i<bs.args.length;++i) {
+            var pair = bs.args[i];
+            if(pair[0] === 1) {
+                pair[1] = table + "." + column;
+            }
+            if(pair[1].trim() === "") {
+                var save = false;
+            }
+        }
+    }
+
+    if(save === false) {
+        bound_scales_view.render();
+    } else {
+        bound_scales.create(bs,bindingId)
+                    .done(function() {
+                         bound_scales_view.proto = null;
+                         bound_scales_view.render();
+                     });
+    }
+}
+
+function select_scale_2(id) {
+    id = parseInt(id);
+    if(bindings_view.selectId === null) {
+        return;
+    }
+
+    if(scales_view_2.selectId === id) {
+        scales_view_2.selectId = null;
+        bound_scales_view.proto = null;
+
+    } else {
+        scales_view_2.selectId = id;
+        var scale = scales_table.get(id);
+        var args = [];
+        for(var i=0;i<scale.arity;++i) {
+            args.push([i,""]);
+        }
+
+        bound_scales_view.proto = new BoundScale("",scale,args);
+
+    }
+
+    scales_view_2.render();
+    bound_scales_view.render();
+}
+
+function solve(bindingId) {
     $.ajax({
         url: abspath("solve"),
         type: "POST",
-        data: JSON.stringify({
-            "graph": graph,
-            "binding": $("button#dropdown_header").data("id"),
-        }),
+        data: JSON.stringify([ graph, bindingId ]),
         contentType: "application/json",
         dataType: "json",
     }).done(function(data,status,jqxhr){
@@ -1369,26 +1751,54 @@ function solve() {
         var options = data["options"];
         var equalities = data["equalities"];
 
-        var resultTable = $("<table>").attr("id","resultTable");
-        var hrow = $("<tr>");
-        $.each(header,function(index,colname) {
-            $("<th>").text(colname.replace("t","#")).appendTo(hrow);
+        header = $.map(header,function(name) {
+            return new Column(name,name,"300px");
         });
-        resultTable.append(hrow);
-        $.each(result,function(i,tuple) {
-            var row = $("<tr>");
-            $.each(tuple,function(j,value) {
-                $("<td>").text(value).appendTo(row);
-            });
-            resultTable.append(row);
-        });
-        $("#resultTable").replaceWith(resultTable)
 
-        var optionsView = $("<div>").attr("id","optionsView");
+        var items = []
+        for(var i=0;i<result.length;++i) {
+            var item = {"id":null};
+            for(var j=0;j<header.length;++j) {
+                item[header[j].field] = result[i][j];
+            }
+            items.push(item);
+        }
+
+        var source = $("script#result_template").html();
+        var context = {
+            "header": header,
+            "items": items,
+        };
+        var $table = $(nunjucks.renderString(source,context));
+        $("#resultTable").replaceWith($table);
+
+        options2 = {};
+        for(var key in options) {
+            if(!(key.includes("#"))) {
+                options2[key] = options[key];
+            }
+        }
+        for(var key in options) {
+            if(key.includes("#")) {
+                var tmp = key.split("#");
+                key2 = "("+tmp[0]+","+tmp[1]+")";
+                options2[key2] = options[key];
+            }
+        }
+
+        var source2 = $("script#options_template3").html();
+        var context2 = {
+            "nodes": options2,
+            "equalities": equalities,
+        };
+
+        var $optionsView = $(nunjucks.renderString(source2,context2));
+
+        /*
+        var $optionsView = $("<div>").attr("id","optionsView");
         $.each(options,function(nodeId,nodeOpts) {
             var details = $("<details>").addClass("nodeContext").prop("open",true);
-            var sort = graph.nodes[nodeId].sort
-            $("<summary>").text(sort+" "+nodeId.replace("t","#")).appendTo(details);
+            $("<summary>").text(nodeId).appendTo(details);
             $.each(nodeOpts,function(prefix,scaleOpts) {
                 var div = $("<div>").addClass("options");
                 $("<span>").addClass("label")
@@ -1419,7 +1829,7 @@ function solve() {
                 });
                 details.append(div);
             });
-            optionsView.append(details);
+            $optionsView.append(details);
         });
 
         var details = $("<details>").addClass("nodeContext").prop("open",true);
@@ -1436,13 +1846,15 @@ function solve() {
                          .appendTo(div);
         });
         details.append(div);
-        optionsView.append(details);
+        $optionsView.append(details);
+        */
 
-        $("#optionsView").replaceWith(optionsView);
+        $("#optionsView").replaceWith($optionsView);
     });
 }
 
 function place_node(e) {
+
     if(queue.length > 0) {
 
         var $this = $(this);
@@ -1456,9 +1868,10 @@ function place_node(e) {
 
         if(queue.length == 0) {
             $('html').css('cursor','default');
-            solve();
+            solve(bindings_view.selectId);
         }
     }
+
 }
 
 function set_content(e) {
@@ -1469,39 +1882,38 @@ function set_content(e) {
     $("main").replaceWith($(html));
 
     if(page === "page1") {
-        edit_mode = false;
+        queue = [];
+        graph = null;
         $("#dropdown").replaceWith($("<div>").attr("id","dropdown"));
-        get_scales();
-        $(".js-create_scale").on("click",create_scale);
-        $(".js-delete-scale").on("click",delete_scale);
-        $(".js-create_attribute").on("click",create_attribute);
-        $(".js-delete_attribute").on("click",delete_attribute);
+        init_page1();
     } else if(page === "page2") {
-        edit_mode = false;
+        queue = [];
+        graph = null;
         $("#dropdown").replaceWith($("<div>").attr("id","dropdown"));
-        get_bindings();
-        get_scales_2();
-        $(".js-create_binding").on("click",create_binding);
-        $(".js-delete_binding").on("click",delete_binding);
+        init_page2();
     } else if(page === "page3") {
         queue = [];
-        edit_mode = false;
-        get_sorts_and_bindings();
+        graph = new Graph();
+        init_page3();
         $(".js-place_node").on("click",place_node);
     }
 
     $("a.nav").removeClass("selected");
     $("#"+"ref_"+page).addClass("selected");
+
 }
 
 $(document).ready(function(){
-    $.ajax({
-        url: abspath("get_bindings"),
-        dataType: "json",
-    }).done(function(data,status,jqxhr) {
+
+    scrollbar_width = getScrollBarWidth();
+    $.when(
+        scales_table.load({}),
+        bindings_table.load({})
+    ).done(function(){
         $("a.nav").on("click",set_content);
         $("#ref_page3").trigger("click");
     });
+
 });
 
 </script>
@@ -1509,127 +1921,30 @@ $(document).ready(function(){
 <body class="vbox" style="height:100vh;margin:0px;">
     <header style="display:flex;background:black;">
         <a id="ref_page1" class="nav" data-content="page1">Scales</a>
-        <a id="ref_page2" class="nav" data-content="page2">Bindings</a>
+        <a id="ref_page2" class="nav" data-content="page2">ContextFamilies</a>
         <a id="ref_page3" class="nav" data-content="page3">Navigation</a>
         <div style="flex-grow:1"></div>
         <div id="dropdown"></div>
     </header>
-    <template id="table_box">
-        <div class="table_box" style="display:flex;flex-direction:column;padding:2px;">
-            <div class="titlebar">
-                <div style="flex-basis:20%;"></div>
-                <div class="title"></div>
-                <div style="flex-basis:20%;text-align:right;">
-                    <button class="icon js-delete_binding_box">x</button>
-                </div>
-            </div>
-            <div class="table_box_content">
-                <table style="margin:5px;">
-                    <thead>
-                        <tr><th style="width:100px;">Parameter</th><th style="width:200px;">Column</th></tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-    </template>
     <template id="page1">
         <main class="hbox" style="flex-grow:1;">
-            <div class="window" style="flex-basis:50%;">
-                <div class="titlebar">
-                    <div style="flex-basis:20%;"></div>
-                    <div class="title">Conceptual Scales</div>
-                    <div style="flex-basis:20%;text-align:right;">
-                        <button class="icon js-create_scale">&plus;</button>
-                        <button class="icon js-delete-scale">&minus;</button>
-                    </div>
-                </div>
-                <div class="content">
-                    <table style="margin:5px;">
-                        <thead>
-                            <tr><th style="width:200px;">Name</th><th style="width:100px;">Arity</th></tr>
-                        </thead>
-                        <tbody id="scales"></tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="window" style="flex-basis:50%;">
-                <div class="titlebar">
-                    <div style="flex-basis:20%;"></div>
-                    <div class="title">Attributes</div>
-                    <div style="flex-basis:20%;text-align:right;">
-                        <button class="icon js-create_attribute">&plus;</button>
-                        <button class="icon js-delete_attribute">&minus;</button>
-                    </div>
-                </div>
-                <div class="content">
-                    <table style="margin:5px;">
-                        <thead>
-                            <tr><th style="width:100px;">Attribute</th><th style="width:400px;">SQL Definition</th></tr>
-                        </thead>
-                        <tbody id="attributes"></tbody>
-                    </table>
-                </div>
-            </div>
+            <div id="scales" class="window" style="flex-basis:50%;"></div>
+            <div id="attributes" class="window" style="flex-basis:50%;"></div>
         </main>
     </template>
     <template id="page2">
         <main class="hbox" style="flex-grow:1;">
             <div class="vbox" style="flex-basis:33%;">
-                <div class="window" style="flex-basis:50%;">
-                    <div class="titlebar">
-                        <div style="flex-basis:20%;"></div>
-                        <div class="title">Bindings</div>
-                        <div style="flex-basis:20%;text-align:right;">
-                            <button class="icon js-create_binding">&plus;</button>
-                            <button class="icon js-delete_binding">&minus;</button>
-                        </div>
-                    </div>
-                    <div class="content">
-                        <table style="margin:5px;">
-                            <thead>
-                                <tr><th style="width:100px;">Host</th><th style="width:100px;">Database</th><th style="width:100px;">Binding</th></tr>
-                            </thead>
-                            <tbody id="bindings"></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="window" style="flex-basis:50%;">
-                    <div class="titlebar">
-                        <div style="flex-basis:20%;"></div>
-                        <div class="title">Conceptual Scales</div>
-                        <div style="flex-basis:20%;text-align:right;"></div>
-                    </div>
-                    <div class="content">
-                        <table style="margin:5px;">
-                            <thead>
-                                <tr><th style="width:200px;">Name</th><th style="width:100px;">Arity</th></tr>
-                            </thead>
-                            <tbody id="scales"></tbody>
-                        </table>
-                    </div>
-                </div>
+                <div id="bindings" class="window" style="flex-basis:50%;"></div>
+                <div id="scales_2" class="window" style="flex-basis:50%;"></div>
             </div>
-            <div class="window" style="flex-basis:34%;">
-                <div class="titlebar">
-                    <div style="flex-basis:20%;"></div>
-                    <div class="title">Columns</div>
-                    <div style="flex-basis:20%;text-align:right;"></div>
-                </div>
-                <div class="content">
-                    <table style="margin:5px;">
-                        <thead>
-                            <tr><th style="width:200px;">Table</th><th style="width:200px;">Column</th></tr>
-                        </thead>
-                        <tbody id="columns"></tbody>
-                    </table>
-                </div>
+            <div class="vbox" style="flex-basis:34%;">
+                <div id="sorts" class="window" style="flex-basis:50%;"></div>
+                <div id="columns" class="window" style="flex-basis:50%;"></div>
             </div>
             <div class="window" style="flex-basis:33%;">
                 <div class="titlebar">
-                    <div style="flex-basis:20%;"></div>
                     <div class="title">Bound Scales</div>
-                    <div style="flex-basis:20%;text-align:right;"></div>
                 </div>
                 <div id="bound_scales" class="content"></div>
             </div>
@@ -1651,7 +1966,7 @@ $(document).ready(function(){
                     <div class="titlebar">
                         <div class="title">Graph</div>
                     </div>
-                    <svg class="content js-place_node" style="background:white;">
+                    <svg class="canvas js-place_node">
                         <g></g>
                     </svg>
                 </div>
@@ -1665,6 +1980,19 @@ $(document).ready(function(){
                 <div>
             </div>
         </main>
+    </template>
+    <template id="page4">
+        <main class="hbox">
+            <svg class="content js-place_node" style="flex-basis:100%;background:white;">
+                <g></g>
+            </svg>
+        </main>
+    </template>
+    <template id="page5">
+        <main class="hbox"></main>
+    </template>
+    <template id="page6">
+        <main class="hbox"></main>
     </template>
     <main style="flex-grow:1;">
     </main>
