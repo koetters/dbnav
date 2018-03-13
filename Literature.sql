@@ -25,7 +25,8 @@ SET time_zone = "+00:00";
 --
 -- Table structure for table `Author`
 --
-
+CREATE DATABASE IF NOT EXISTS Literature;
+Use Literature;
 CREATE TABLE `Author` (
   `name` varchar(85) NOT NULL,
   `nationality` varchar(85) NOT NULL,
