@@ -202,7 +202,7 @@ def solve(graph,bindingId):
     cursor.execute("SELECT K.id,K.scale,y.arg,y.column FROM BoundScale AS K,BoundScaleArg AS y WHERE y.bound_scale = K.id AND K.binding = ?",[str(bindingId)])
     rows2 = cursor.fetchall()
 
-    cursor.execute("SELECT table_name,column_name FROM BindingOutput WHERE binding = ?",[str(bindingId)])
+    cursor.execute("SELECT table_name,output_string FROM BindingSort WHERE binding = ?",[str(bindingId)])
     rows3 = cursor.fetchall()
 
     cursor.execute("SELECT name,host,database FROM Binding WHERE id=?",[str(bindingId)])
@@ -529,7 +529,7 @@ def read_sorts(id):
     cursor.execute("SELECT host,database FROM Binding WHERE id = ?",[id])
     host,database = cursor.fetchone()
 
-    cursor.execute("SELECT id,table_name,column_name FROM BindingOutput WHERE binding = ?",[id])
+    cursor.execute("SELECT id,table_name,output_string FROM BindingSort WHERE binding = ?",[id])
     rows = cursor.fetchall()
 
     cursor.close()
@@ -667,8 +667,8 @@ def update_sort(sort,bindingId):
     basedir = os.path.dirname(os.path.realpath(__file__))
     cnx = sqlite3.connect(os.path.join(basedir,"db.sqlite"))
     cursor = cnx.cursor()
-    query = "INSERT OR REPLACE INTO BindingOutput (id,binding,table_name,column_name) VALUES "\
-            + "((SELECT id FROM BindingOutput WHERE binding=? AND table_name=?),?,?,?);"
+    query = "INSERT OR REPLACE INTO BindingSort (id,binding,table_name,output_string) VALUES "\
+            + "((SELECT id FROM BindingSort WHERE binding=? AND table_name=?),?,?,?);"
     cursor.execute(query,[bindingId,sort.name,bindingId,sort.name,sort.output])
 
     cnx.commit()
@@ -721,7 +721,7 @@ def delete_binding(id):
     cursor.execute("DELETE FROM Binding WHERE id=?",[str(id)])
     cursor.execute("DELETE FROM BoundScaleArg WHERE bound_scale IN (SELECT id FROM BoundScale WHERE binding=?)",[str(id)])
     cursor.execute("DELETE FROM BoundScale WHERE binding=?",[str(id)])
-    cursor.execute("DELETE FROM BindingOutput WHERE binding=?",[str(id)])
+    cursor.execute("DELETE FROM BindingSort WHERE binding=?",[str(id)])
 
     cnx.commit()
     cursor.close()
