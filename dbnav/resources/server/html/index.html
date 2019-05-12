@@ -2003,6 +2003,12 @@ select {
 
     <script id="sort_api_template" type="x-nunjucks-template">
 
+        <div style="display:flex;background:#c7c7c7;border:1px solid black;padding:10px;margin:0;">
+            <div style="font-size:1.5em;font-weight:bold;">Output</div>
+        </div>
+        <div class="hbox">
+            <input type="text" class="js_set_output_sql" name="output" value="{{ mvas.print_function }}" placeholder="name" style="width:20em;margin:6px;">&nbsp;
+        </div>
         <div style="display:flex;background:#c7c7c7;border:1px solid black;padding:10px;margin:0 0 1.25em;">
             <div style="font-size:1.5em;font-weight:bold;">Properties</div>
         </div>
@@ -2016,7 +2022,7 @@ select {
                 <span>{{ param.sort }}</span>
                 <span>{{ param.role }}</span>
                 {% endfor %}
-                ) <!--<br><span>{{ mva.sqldef }}</span>-->
+                ) <br><span style="color:gray;">{{ mva.sqldef }}</span>
             </div>
             <div style="margin-left:auto;">
                 <select name="scales" class="js_scale_mva", data-mva_id="{{ mva.id }}">
@@ -2057,7 +2063,7 @@ select {
                 <span>{{ param.sort }}</span>
                 <span>{{ param.role }}</span>
                 {% endfor %}
-                ) <!--<br><span>{{ mva.sqldef }}</span>-->
+                ) <br><span style="color:gray;">{{ mva.sqldef }}</span>
             </div>
             <div style="margin-left:auto;">
                 <select name="scales" class="js_scale_mva" data-mva_id="{{ mva.id }}">
@@ -2480,6 +2486,10 @@ setup = {
         } else {
             render_template(args["slot"],args["template"],args["data"]);
 
+            $(".js_set_output_sql").on("change",function(e) {
+                var output_sql = $(e.target).val();
+                send_ajax("set_output_sql",{"sqlterm": output_sql});
+            });
             $(".js_scale_mva").on("change",function(e) {
                 var mva_id = $(e.target).data("mva_id");
                 var scale_class = $(e.target).val();

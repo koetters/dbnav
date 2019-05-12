@@ -157,7 +157,7 @@
         }
     },
     "output": {
-        "Author": "{0}.id",
+        "Author": "CONCAT({0}.last_name,', ',{0}.first_name)",
         "Book": "{0}.title"
     },
     "password": "dbnav",

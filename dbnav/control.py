@@ -760,7 +760,10 @@ class Control(object):
         pcf.delete_mva(mva_id)
         Storage.write(pcf, self.state["pcf_name"])
 
-
+    def set_output_sql(self,sqlterm):
+        pcf = Storage.read(self.state["pcf_name"])
+        pcf.set_printsql(self.state["current_sort"],sqlterm)
+        Storage.write(pcf, self.state["pcf_name"])
 
 
 
