@@ -1,0 +1,165 @@
+{
+    "_cls": "PowerContextFamily",
+    "_mod": "dbnav.pcf",
+    "_next_id": 10,
+    "database": "Literature",
+    "host": "localhost",
+    "mvas": {
+        "m1": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.pcf",
+            "datatype": "int",
+            "name": "id",
+            "roles": [
+                "ATTR"
+            ],
+            "scale": null,
+            "sort": [
+                "Author"
+            ],
+            "sqldef": "{0}.id"
+        },
+        "m2": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.pcf",
+            "datatype": "varchar",
+            "name": "first_name",
+            "roles": [
+                "ATTR"
+            ],
+            "scale": null,
+            "sort": [
+                "Author"
+            ],
+            "sqldef": "{0}.first_name"
+        },
+        "m3": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.pcf",
+            "datatype": "varchar",
+            "name": "last_name",
+            "roles": [
+                "ATTR"
+            ],
+            "scale": null,
+            "sort": [
+                "Author"
+            ],
+            "sqldef": "{0}.last_name"
+        },
+        "m4": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.pcf",
+            "datatype": "varchar",
+            "name": "nationality",
+            "roles": [
+                "ATTR"
+            ],
+            "scale": {
+                "_cls": "PrefixScale",
+                "_mod": "dbnav.pcf"
+            },
+            "sort": [
+                "Author"
+            ],
+            "sqldef": "{0}.nationality"
+        },
+        "m5": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.pcf",
+            "datatype": "date",
+            "name": "date_of_birth",
+            "roles": [
+                "ATTR"
+            ],
+            "scale": {
+                "_cls": "DateIntervalScale",
+                "_mod": "dbnav.pcf",
+                "maxdate": 2000,
+                "mindate": 1800,
+                "step": 10
+            },
+            "sort": [
+                "Author"
+            ],
+            "sqldef": "{0}.date_of_birth"
+        },
+        "m6": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.pcf",
+            "datatype": "varchar",
+            "name": "title",
+            "roles": [
+                "ATTR"
+            ],
+            "scale": null,
+            "sort": [
+                "Book"
+            ],
+            "sqldef": "{0}.title"
+        },
+        "m7": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.pcf",
+            "datatype": "int",
+            "name": "author",
+            "roles": [
+                "ATTR"
+            ],
+            "scale": null,
+            "sort": [
+                "Book"
+            ],
+            "sqldef": "{0}.author"
+        },
+        "m8": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.pcf",
+            "datatype": "date",
+            "name": "publication_date",
+            "roles": [
+                "ATTR"
+            ],
+            "scale": {
+                "_cls": "DateIntervalScale",
+                "_mod": "dbnav.pcf",
+                "maxdate": 2000,
+                "mindate": 1800,
+                "step": 10
+            },
+            "sort": [
+                "Book"
+            ],
+            "sqldef": "{0}.publication_date"
+        },
+        "m9": {
+            "_cls": "ForeignKey",
+            "_mod": "dbnav.pcf",
+            "columns": [
+                "author",
+                "id"
+            ],
+            "datatype": "bool",
+            "name": "wrote",
+            "roles": [
+                "ARG1",
+                "ARG2"
+            ],
+            "scale": {
+                "_cls": "BooleanScale",
+                "_mod": "dbnav.pcf"
+            },
+            "sort": [
+                "Book",
+                "Author"
+            ],
+            "sqldef": "IF({0}.author={1}.id,1,0)"
+        }
+    },
+    "output": {
+        "Author": "{0}.id",
+        "Book": "{0}.title"
+    },
+    "password": "dbnav",
+    "user": "dbnav"
+}

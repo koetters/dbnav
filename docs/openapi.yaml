@@ -1,0 +1,90 @@
+openapi: 3.0.0
+servers:
+  - url: 'http://jebk.itu.dk/v1'
+info:
+  version: '1.0'
+  title: Relational Database Navigation
+  description: Interactive conjunctive querying based on Formal Concept Analysis
+paths:
+  /get_sorts:
+    get:
+      summary: get sorts
+      description: get sorts
+      responses:
+        '200':
+          description: a list of sorts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+  /solve:
+    post:
+      summary: solve query
+      description: solve query
+      responses:
+        '200':
+          description: result and refinements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Result'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Graph'
+        description: query graph
+        required: true
+components:
+  schemas:
+    Graph:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Node'
+    Node:
+      type: object
+      properties:
+        sort:
+          type: string
+        def:
+          type: array
+          items:
+            type: string
+    Result:
+      type: object
+      properties:
+        header:
+          type: array
+          items:
+            type: string
+        result:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+        options:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Option'
+    Option:
+      type: object
+      required:
+        - name
+        - grp
+      properties:
+        name:
+          type: string
+        grp:
+          type: string
+          enum:
+            - def
+            - none
+            - some
+            - all
+        pos:
+          type: integer
+        sort:
+          type: string
