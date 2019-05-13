@@ -1,7 +1,7 @@
 {
     "_cls": "PowerContextFamily",
     "_mod": "dbnav.pcf",
-    "_next_id": 10,
+    "_next_id": 13,
     "database": "Literature",
     "host": "localhost",
     "mvas": {
@@ -18,6 +18,46 @@
                 "Author"
             ],
             "sqldef": "{0}.id"
+        },
+        "m11": {
+            "_cls": "ManyValuedAttribute",
+            "_mod": "dbnav.pcf",
+            "datatype": "varchar",
+            "name": "full_name",
+            "roles": [
+                "ATTR"
+            ],
+            "scale": {
+                "_cls": "PrefixScale",
+                "_mod": "dbnav.pcf"
+            },
+            "sort": [
+                "Author"
+            ],
+            "sqldef": "CONCAT({0}.last_name,', ',{0}.first_name)"
+        },
+        "m12": {
+            "_cls": "ForeignKey",
+            "_mod": "dbnav.pcf",
+            "columns": [
+                "id",
+                "author"
+            ],
+            "datatype": "bool",
+            "name": "wrote",
+            "roles": [
+                "AGT",
+                "OBJ"
+            ],
+            "scale": {
+                "_cls": "BooleanScale",
+                "_mod": "dbnav.pcf"
+            },
+            "sort": [
+                "Author",
+                "Book"
+            ],
+            "sqldef": "IF({0}.id={1}.author,1,0)"
         },
         "m2": {
             "_cls": "DBColumn",
@@ -131,29 +171,6 @@
                 "Book"
             ],
             "sqldef": "{0}.publication_date"
-        },
-        "m9": {
-            "_cls": "ForeignKey",
-            "_mod": "dbnav.pcf",
-            "columns": [
-                "author",
-                "id"
-            ],
-            "datatype": "bool",
-            "name": "wrote",
-            "roles": [
-                "ARG1",
-                "ARG2"
-            ],
-            "scale": {
-                "_cls": "BooleanScale",
-                "_mod": "dbnav.pcf"
-            },
-            "sort": [
-                "Book",
-                "Author"
-            ],
-            "sqldef": "IF({0}.author={1}.id,1,0)"
         }
     },
     "output": {

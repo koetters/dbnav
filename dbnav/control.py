@@ -726,8 +726,10 @@ class Control(object):
                     return
 
                 roles = [form_data["role1"], form_data["role2"]]
-                mva_id = pcf.add_foreign_key(form_data["name"], form_data["sort1"], form_data["column1"],
-                                             form_data["sort2"], form_data["column2"])
+                colname1 = pcf.mvas[form_data["column1"]].name
+                colname2 = pcf.mvas[form_data["column2"]].name
+                mva_id = pcf.add_foreign_key(form_data["name"], form_data["sort1"], colname1,
+                                             form_data["sort2"], colname2)
                 pcf.mvas[mva_id].roles = roles
 
                 self.state["mva_form2_data"] = {
