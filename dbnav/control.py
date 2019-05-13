@@ -147,6 +147,7 @@ class Control(object):
         elif self.state["main"] == "edit":
 
             pcf = Storage.read(self.state["pcf_name"])
+
             views.append({
                 "cmd": "set_edit_view",
                 "args": {
@@ -517,6 +518,7 @@ class Control(object):
             node.display.add(context_id)
 
     def create_binding(self, name, user, password, host, database):
+
         cnx = mysql.connector.connect(user=user, password=password, host=host, database=database)
 
         cursor1 = cnx.cursor()
@@ -552,7 +554,7 @@ class Control(object):
             else:
                 pcf.add_foreign_key(keyname, sort1, column1, sort2, column2)
 
-        Storage.write(pcf, name)
+        Storage.write(pcf, name if name else database)
 
     def select_sort(self,sort):
         self.state["current_sort"] = sort
@@ -643,23 +645,23 @@ class Control(object):
 
         if form_id == "mvaForm1":
             if self.state["mva_form1"] == "derived":
-                form = self.state["mva_form1_data"]
+                # form = self.state["mva_form1_data"]
 
-                assert(form["datatype"] == form_data["datatype"])
-                assert(form["name"] == form_data["name"])
-                assert(form["sqldef"] == form_data["sqldef"])
-                assert(form["nargs"] == form_data["nargs"] and form["nargs"] == str(1))
-                assert(form["sort1"] == form_data["sort1"])
-                assert(form["role1"] == form_data["role1"])
+                # assert(form["datatype"] == form_data["datatype"])
+                # assert(form["name"] == form_data["name"])
+                # assert(form["sqldef"] == form_data["sqldef"])
+                # assert(form["nargs"] == form_data["nargs"] and form["nargs"] == str(1))
+                # assert(form["sort1"] == form_data["sort1"])
+                # assert(form["role1"] == form_data["role1"])
 
-                if not (form["name"] and form["sqldef"] and form["datatype"] and form["role1"]):
+                if not (form_data["name"] and form_data["sqldef"] and form_data["datatype"] and form_data["role1"]):
                     return
-                if form["sort1"] not in pcf.sorts():
+                if form_data["sort1"] not in pcf.sorts():
                     return
 
-                sort = [form["sort{0}".format(i+1)] for i in range(int(form["nargs"]))]
-                roles = [form["role{0}".format(i+1)] for i in range(int(form["nargs"]))]
-                pcf.add_mva(form["name"], sort, form["datatype"], form["sqldef"], roles)
+                sort = [form_data["sort{0}".format(i+1)] for i in range(int(form_data["nargs"]))]
+                roles = [form_data["role{0}".format(i+1)] for i in range(int(form_data["nargs"]))]
+                pcf.add_mva(form_data["name"], sort, form_data["datatype"], form_data["sqldef"], roles)
 
                 self.state["mva_form1_data"] = {
                     "datatype": None,
@@ -673,28 +675,28 @@ class Control(object):
 
         elif form_id == "mvaForm2":
             if self.state["mva_form2"] == "derived":
-                form = self.state["mva_form2_data"]
+                # form = self.state["mva_form2_data"]
 
-                assert(form["datatype"] == form_data["datatype"])
-                assert(form["name"] == form_data["name"])
-                assert(form["sqldef"] == form_data["sqldef"])
-                assert(form["nargs"] == form_data["nargs"])
+                # assert(form["datatype"] == form_data["datatype"])
+                # assert(form["name"] == form_data["name"])
+                # assert(form["sqldef"] == form_data["sqldef"])
+                # assert(form["nargs"] == form_data["nargs"])
 
-                for i in range(1,int(form["nargs"])+1):
-                    assert(form["sort{0}".format(i)] == form_data["sort{0}".format(i)])
-                    assert(form["role{0}".format(i)] == form_data["role{0}".format(i)])
+                # for i in range(1,int(form["nargs"])+1):
+                #     assert(form["sort{0}".format(i)] == form_data["sort{0}".format(i)])
+                #     assert(form["role{0}".format(i)] == form_data["role{0}".format(i)])
 
-                if not (form["name"] and form["sqldef"] and form["datatype"]):
+                if not (form_data["name"] and form_data["sqldef"] and form_data["datatype"]):
                     return
-                for i in range(1,int(form["nargs"])+1):
-                    if form["sort{0}".format(i)] not in pcf.sorts():
+                for i in range(1,int(form_data["nargs"])+1):
+                    if form_data["sort{0}".format(i)] not in pcf.sorts():
                         return
-                    if not form["role{0}".format(i)]:
+                    if not form_data["role{0}".format(i)]:
                         return
 
-                sort = [form["sort{0}".format(i+1)] for i in range(int(form["nargs"]))]
-                roles = [form["role{0}".format(i+1)] for i in range(int(form["nargs"]))]
-                pcf.add_mva(form["name"], sort, form["datatype"], form["sqldef"], roles)
+                sort = [form_data["sort{0}".format(i+1)] for i in range(int(form_data["nargs"]))]
+                roles = [form_data["role{0}".format(i+1)] for i in range(int(form_data["nargs"]))]
+                pcf.add_mva(form_data["name"], sort, form_data["datatype"], form_data["sqldef"], roles)
 
                 self.state["mva_form2_data"] = {
                     "datatype": None,
@@ -708,25 +710,24 @@ class Control(object):
                 }
 
             elif self.state["mva_form2"] == "fk":
-                form = self.state["mva_form2_data"]
+                # form = self.state["mva_form2_data"]
 
-                assert(form["name"] == form_data["name"])
-                assert(form["sort1"] == form_data["sort1"])
-                assert(form["column1"] == form_data["column1"])
-                assert(form["role1"] == form_data["role1"])
-                assert(form["sort2"] == form_data["sort2"])
-                assert(form["column2"] == form_data["column2"])
-                assert(form["role2"] == form_data["role2"])
+                # assert(form["name"] == form_data["name"])
+                # assert(form["sort1"] == form_data["sort1"])
+                # assert(form["column1"] == form_data["column1"])
+                # assert(form["role1"] == form_data["role1"])
+                # assert(form["sort2"] == form_data["sort2"])
+                # assert(form["column2"] == form_data["column2"])
+                # assert(form["role2"] == form_data["role2"])
 
-                if not (form["name"] and form["column1"] and form["column2"] and form["role1"] and form["role2"]):
+                if not (form_data["name"] and form_data["column1"] and form_data["column2"] and form_data["role1"] and form_data["role2"]):
                     return
-                if not (form["sort1"] in pcf.sorts() or form["sort2"] in pcf.sorts()):
+                if not (form_data["sort1"] in pcf.sorts() or form_data["sort2"] in pcf.sorts()):
                     return
 
-                sort = [form["sort1"], form["sort2"]]
-                columns = [form["column1"], form["column2"]]
-                roles = [form["role1"], form["role2"]]
-                mva_id = pcf.add_foreign_key(form["name"], sort, columns)
+                roles = [form_data["role1"], form_data["role2"]]
+                mva_id = pcf.add_foreign_key(form_data["name"], form_data["sort1"], form_data["column1"],
+                                             form_data["sort2"], form_data["column2"])
                 pcf.mvas[mva_id].roles = roles
 
                 self.state["mva_form2_data"] = {

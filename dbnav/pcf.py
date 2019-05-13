@@ -168,6 +168,7 @@ class DBColumn(ManyValuedAttribute):
     def from_dict(cls, obj):
         mva = cls(obj["name"], obj["sort"], obj["datatype"])
         mva.scale = obj["scale"]
+        mva.roles = obj["roles"]
         return mva
 
 
@@ -187,6 +188,7 @@ class ForeignKey(ManyValuedAttribute):
     def from_dict(cls, obj):
         mva = cls(obj["name"], obj["sort"], obj["columns"])
         mva.scale = obj["scale"]
+        mva.roles = obj["roles"]
         return mva
 
 
@@ -223,10 +225,7 @@ class PowerContextFamily(object):
         return mva_id
 
     def delete_mva(self, name):
-        print(name)
-        print(self.mvas)
         self.mvas = {mva_id: mva for mva_id, mva in self.mvas.items() if mva_id != name}
-        print(self.mvas)
 
     def set_printsql(self, sort, sqldef):
         self.output[sort] = sqldef
