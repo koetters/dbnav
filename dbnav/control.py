@@ -301,12 +301,18 @@ class Control(object):
         sort = graph.nodes[node_id].sort
 
         if sort is None:
+            tables = graph.pcf.sorts()
+            select = 'SELECT "{0}" AS sort, COUNT(*) AS count FROM {1}.{0}'
+            parts = [select.format(table,graph.pcf.database) for table in tables]
+            query = " UNION ".join(parts)
+
             cnx = mysql.connector.connect(user=graph.pcf.user, password=graph.pcf.password,
                                           host=graph.pcf.host, database=graph.pcf.database)
             cursor = cnx.cursor()
 
-            query = "SELECT table_name,table_rows FROM information_schema.tables WHERE table_schema='{0}'"
-            cursor.execute(query.format(graph.pcf.database))
+            # # the information_schema values turned out to be unreliable for InnoDB tables
+            # query = "SELECT table_name,table_rows FROM information_schema.tables WHERE table_schema='{0}'"
+            cursor.execute(query)
             rows = cursor.fetchall()
 
             cursor.close()
