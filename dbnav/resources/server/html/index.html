@@ -1994,7 +1994,7 @@ select {
                         </div>
                     </fieldset>
                     <div class="line" style="justify-content:flex-end;">
-                        <div id="submit_button" class="js_create_binding" style="margin:5px;border:1px solid black;background:#DDDDDD;padding:5px;">Create</div>
+                        <div class="submit" style="margin:5px;border:1px solid black;background:#DDDDDD;padding:5px;">Create</div>
                     </div>
                 </form>
             </div>
@@ -2395,17 +2395,7 @@ setup = {
         render_template(args["slot"],args["template"],args["data"]);
         $(".js_insert_navigate_view").on("click",handler("insert_navigate_view",["pcf_name"]));
         $(".js_insert_edit_view").on("click",handler("insert_edit_view",["pcf_name"]));
-        $(".js_create_binding").on("click",function(event) {
-            var formData = {
-                "name": $("input[name=name]").val(),
-                "user": $("input[name=user]").val(),
-                "password": $("input[name=password]").val(),
-                "host": $("input[name=host]").val(),
-                "database": $("input[name=database]").val(),
-            };
-
-            send_ajax("create_binding",formData);
-        });
+        $("#create_form").on("click",".submit",form_handler("create_binding","form"));
     },
 
     "set_edit_view": function(args) {
@@ -2466,7 +2456,7 @@ setup = {
 
     "set_prefix_label_view": function(args) {
         render_template(args["slot"],args["template"],args["data"]);
-        $(".js_set_label_on_keyup").on("keyup",handler("set_label","label"));
+        $(".js_set_label_on_keyup").on("keyup",handler("set_label",[],"label"));
         $(".js_set_label").on("click",handler("set_label",["label"]));
         $("#prefix_input").val(args["label"]).focus();
     },
@@ -2485,38 +2475,14 @@ setup = {
             $("#"+args["slot"]).empty();
         } else {
             render_template(args["slot"],args["template"],args["data"]);
-
-            $(".js_set_output_sql").on("change",function(e) {
-                var output_sql = $(e.target).val();
-                send_ajax("set_output_sql",{"sqlterm": output_sql});
-            });
-            $(".js_scale_mva").on("change",function(e) {
-                var mva_id = $(e.target).data("mva_id");
-                var scale_class = $(e.target).val();
-                send_ajax("scale_mva",{"mva_id":mva_id,"scale_class":scale_class})
-            });
+            $(".js_set_output_sql").on("change",handler("set_output_sql",[],"sqlterm"));
+            $(".js_scale_mva").on("change",handler("scale_mva",["mva_id"],"scale_class"));
             $(".js_delete_mva").on("click",handler("delete_mva",["mva_id"]));
             $(".js_select_mva_form2").on("click",handler("select_mva_form2",["form_id"]));
-
-            $("#mvaForm1, #mvaForm2").on("click", ".submit", function(e) {
-                $form = $(e.delegateTarget);
-                var serialized_form = $form.find(":input").serializeArray();
-                var form_data = {};
-                $.each(serialized_form,function(index,item) {
-                    form_data[item.name] = item.value;
-                });
-                send_ajax("create_mva",{"form_id":$form.attr("id"), "form_data":form_data});
-            });
-
-            $("#mvaForm1, #mvaForm2").on("change", ":input", function(e){
-                $form = $(e.delegateTarget);
-                var serialized_form = $form.find(":input").serializeArray();
-                var form_data = {};
-                $.each(serialized_form,function(index,item) {
-                    form_data[item.name] = item.value;
-                });
-                send_ajax("update_form",{"form_id":$form.attr("id"), "form_data":form_data});
-            });
+            $("#mvaForm1").on("click",".submit",form_handler("create_mva1","form_data"));
+            $("#mvaForm2").on("click",".submit",form_handler("create_mva2","form_data"));
+            $("#mvaForm1").on("change",":input",form_handler("update_form1","form_data"));
+            $("#mvaForm2").on("change",":input",form_handler("update_form2","form_data"));
         }
     },
 
@@ -2529,20 +2495,6 @@ setup = {
     },
 }
 
-/* function json_reviver(key,value) {
-
-    if(typeof value === 'object' && value !== null && '_cls' in value) {
-        if(value["_cls"] === 'set') {
-            return new Set(value["_val"]);
-        } else if(value["_cls"] === 'date') {
-            return new Date(value["_val"])
-        } else if(value["_cls"] === 'datetime') {
-            return new Date(value["_val"])
-        }
-    }
-    return value;
-} */
-
 function send_ajax(cmd,args) {
     $.ajax({
         url: "/ajax/",
@@ -2553,9 +2505,6 @@ function send_ajax(cmd,args) {
             "state": state,
         }),
         contentType: "application/json",
-        /* converters: {"text json": function(data) {
-            return JSON.parse(data,json_reviver);
-        }}, */
         dataType: "json",
     }).done(function(result,status,jqxhr) {
 
@@ -2574,18 +2523,33 @@ function render_template(slot,template,data) {
 
 }
 
-function handler(cmd,params) {
+function handler(cmd,params,value=null) {
 
     return function(e) {
         args = {}
-        if(Array.isArray(params)) {
-            for(let param of params) {
-                args[param] = $(e.target).data(param);
-            }
-        } else { // params must be string
-            args[params] = $(e.target).val();
+
+        for(let param of params) {
+            args[param] = $(e.target).data(param);
         }
+
+        if(value !== null) {
+            args[value] = $(e.target).val();
+        }
+
         send_ajax(cmd,args);
+    };
+}
+
+function form_handler(cmd,param) {
+
+    return function(e) {
+        $form = $(e.delegateTarget);
+        var serialized_form = $form.find(":input").serializeArray();
+        var form_data = {};
+        $.each(serialized_form,function(index,item) {
+            form_data[item.name] = item.value;
+        });
+        send_ajax(cmd,{[param]:form_data});
     };
 }
 

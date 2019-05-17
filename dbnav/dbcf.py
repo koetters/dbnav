@@ -1,4 +1,3 @@
-import json
 from collections import Counter
 
 
@@ -84,25 +83,27 @@ class DateIntervalScale(Scale):
 
     def stats(self, values):
 
-        histogram = [0] * self.nbins
-        data_min = None
-        data_max = None
+        # histogram = [0] * self.nbins
+        # data_min = None
+        # data_max = None
 
-        if values:
-            data_min = values[0].year
-            data_max = values[0].year
-            for d in values:
-                v = d.year
-                assert(self.mindate <= v <= self.maxdate)
-                histogram[int((v-self.mindate) // self.step)] += 1
-                data_min = min(data_min, v)
-                data_max = max(data_max, v)
+        # if values:
+        #     data_min = values[0].year
+        #     data_max = values[0].year
+        #     for d in values:
+        #         v = d.year
+        #         assert(self.mindate <= v <= self.maxdate)
+        #         histogram[int((v-self.mindate) // self.step)] += 1
+        #         data_min = min(data_min, v)
+        #         data_max = max(data_max, v)
 
-        return {"histogram": histogram, "count": len(values), "data_min": data_min, "data_max": data_max,
-                "scale_min": self.mindate, "scale_max": self.maxdate}
+        return {"count": len(values), "scale_min": self.mindate, "scale_max": self.maxdate}
 
     def top(self):
         return [self.mindate, self.maxdate]
+
+    def _get_bounds(self):
+        return "SELECT MIN({0}) AS minimum, MAX({0}) AS maximum FROM {1}"
 
     def supremum(self):
         pass
@@ -192,7 +193,7 @@ class ForeignKey(ManyValuedAttribute):
         return mva
 
 
-class PowerContextFamily(object):
+class DBContextFamily(object):
 
     def __init__(self, output, user, password, host, database):
         self.output = dict(output)
@@ -268,7 +269,7 @@ class PowerContextFamily(object):
 
     @classmethod
     def from_dict(cls, obj):
-        pcf = PowerContextFamily(obj["output"], obj["user"], obj["password"], obj["host"], obj["database"])
+        pcf = DBContextFamily(obj["output"], obj["user"], obj["password"], obj["host"], obj["database"])
         pcf.mvas = dict(obj["mvas"])
         pcf._next_id = obj["_next_id"]
         return pcf

@@ -1,13 +1,13 @@
 {
-    "_cls": "PowerContextFamily",
-    "_mod": "dbnav.pcf",
-    "_next_id": 13,
+    "_cls": "DBContextFamily",
+    "_mod": "dbnav.dbcf",
+    "_next_id": 15,
     "database": "Literature",
     "host": "localhost",
     "mvas": {
         "m1": {
             "_cls": "DBColumn",
-            "_mod": "dbnav.pcf",
+            "_mod": "dbnav.dbcf",
             "datatype": "int",
             "name": "id",
             "roles": [
@@ -21,16 +21,13 @@
         },
         "m11": {
             "_cls": "ManyValuedAttribute",
-            "_mod": "dbnav.pcf",
+            "_mod": "dbnav.dbcf",
             "datatype": "varchar",
             "name": "full_name",
             "roles": [
                 "ATTR"
             ],
-            "scale": {
-                "_cls": "PrefixScale",
-                "_mod": "dbnav.pcf"
-            },
+            "scale": null,
             "sort": [
                 "Author"
             ],
@@ -38,7 +35,7 @@
         },
         "m12": {
             "_cls": "ForeignKey",
-            "_mod": "dbnav.pcf",
+            "_mod": "dbnav.dbcf",
             "columns": [
                 "id",
                 "author"
@@ -51,7 +48,7 @@
             ],
             "scale": {
                 "_cls": "BooleanScale",
-                "_mod": "dbnav.pcf"
+                "_mod": "dbnav.dbcf"
             },
             "sort": [
                 "Author",
@@ -61,7 +58,7 @@
         },
         "m2": {
             "_cls": "DBColumn",
-            "_mod": "dbnav.pcf",
+            "_mod": "dbnav.dbcf",
             "datatype": "varchar",
             "name": "first_name",
             "roles": [
@@ -75,7 +72,7 @@
         },
         "m3": {
             "_cls": "DBColumn",
-            "_mod": "dbnav.pcf",
+            "_mod": "dbnav.dbcf",
             "datatype": "varchar",
             "name": "last_name",
             "roles": [
@@ -89,7 +86,7 @@
         },
         "m4": {
             "_cls": "DBColumn",
-            "_mod": "dbnav.pcf",
+            "_mod": "dbnav.dbcf",
             "datatype": "varchar",
             "name": "nationality",
             "roles": [
@@ -97,7 +94,7 @@
             ],
             "scale": {
                 "_cls": "PrefixScale",
-                "_mod": "dbnav.pcf"
+                "_mod": "dbnav.dbcf"
             },
             "sort": [
                 "Author"
@@ -106,7 +103,7 @@
         },
         "m5": {
             "_cls": "DBColumn",
-            "_mod": "dbnav.pcf",
+            "_mod": "dbnav.dbcf",
             "datatype": "date",
             "name": "date_of_birth",
             "roles": [
@@ -114,7 +111,7 @@
             ],
             "scale": {
                 "_cls": "DateIntervalScale",
-                "_mod": "dbnav.pcf",
+                "_mod": "dbnav.dbcf",
                 "maxdate": 2000,
                 "mindate": 1800,
                 "step": 10
@@ -126,7 +123,7 @@
         },
         "m6": {
             "_cls": "DBColumn",
-            "_mod": "dbnav.pcf",
+            "_mod": "dbnav.dbcf",
             "datatype": "varchar",
             "name": "title",
             "roles": [
@@ -140,7 +137,7 @@
         },
         "m7": {
             "_cls": "DBColumn",
-            "_mod": "dbnav.pcf",
+            "_mod": "dbnav.dbcf",
             "datatype": "int",
             "name": "author",
             "roles": [
@@ -154,7 +151,7 @@
         },
         "m8": {
             "_cls": "DBColumn",
-            "_mod": "dbnav.pcf",
+            "_mod": "dbnav.dbcf",
             "datatype": "date",
             "name": "publication_date",
             "roles": [
@@ -162,7 +159,7 @@
             ],
             "scale": {
                 "_cls": "DateIntervalScale",
-                "_mod": "dbnav.pcf",
+                "_mod": "dbnav.dbcf",
                 "maxdate": 2000,
                 "mindate": 1800,
                 "step": 10
