@@ -1,4 +1,3 @@
-import mysql.connector
 import copy
 
 
@@ -67,14 +66,6 @@ class RNode(object):
         rnode = RNode(obj["context_id"],obj["context_name"],obj["endpoints"],obj["label"])
         rnode.point = obj["point"]
         return rnode
-
-
-class Table(object):
-
-    def __init__(self,header,rows):
-
-        self.header = header
-        self.rows = rows
 
 
 class Graph(object):
@@ -201,44 +192,6 @@ class Graph(object):
 
         return component
 
-    def to_sql(self,window,rwindow=[]):
-
-        select = []
-        from_ = []
-        where = []
-
-        # select clause
-        for node_id in window:
-            node = self.nodes[node_id]
-            select.append("{0} AS '{1}:{2}'".format(self.pcf.print_sql(node.sort, node_id),
-                                                    node.sort, node_id))
-
-        for rnode_id in rwindow:
-            rnode = self.rnodes[rnode_id]
-            select.append("{0} AS '{1}({2})'".format(self.pcf.mva_sql(rnode.context_id, rnode.endpoints),
-                                                     rnode.context_name, ",".join(rnode.endpoints)))
-
-        #  select clause: if a single subject was given, include its display attributes
-        if len(window) == 1:
-            node = self.nodes[window[0]]
-            for mva_id in node.display:
-                mva_name = self.pcf.mvas[mva_id].name
-                select.append("{0} AS '{1}({2})'".format(self.pcf.mva_sql(mva_id, [window[0]]),
-                                                         mva_name, window[0]))
-
-        # from clause
-        for node_id, node in self.nodes.items():
-            from_.append("{0} AS {1}".format(node.sort, node_id))
-
-        # where clause
-        for rnode in self.rnodes.values():
-            where.append(self.pcf.pattern_sql(rnode.context_id, rnode.label, rnode.endpoints))
-
-        query = ("SELECT DISTINCT " + ", ".join(select) + " FROM " + ", ".join(from_)
-                 + (" WHERE " if where else "") + " AND ".join(where))
-
-        return query
-
     def to_dict(self):
         return {
             "pcf": self.pcf,
@@ -259,13 +212,6 @@ class Graph(object):
 
     def result_table(self,node_id,rnode_id):
 
-        node = self.nodes[node_id]
-        sort = node.sort
-
-        if sort is None:  # initial graph
-            return Table([],[])
-
-        ## translate the graph into an SQL query
         if rnode_id is None:
             window = [node_id]
             rwindow = []
@@ -274,18 +220,8 @@ class Graph(object):
             window = endpoints
             rwindow = [rnode_id]
 
-        query = self.to_sql(window,rwindow)
+        # passing "self" undoubtedly looks strange; it is a consequence of pcf being an attribute of graph;
+        # TODO: rename this class e.g. navigation_state or semiconcept, pass self.graph instead of "self"
+        return self.pcf.result_table(self,window,rwindow)
 
-        ## query the database
-        cnx = mysql.connector.connect(user=self.pcf.user, password=self.pcf.password,
-                                      host=self.pcf.host, database=self.pcf.database)
-        cursor = cnx.cursor()
 
-        cursor.execute(query)
-        rows = cursor.fetchall()
-        header = [t[0] for t in cursor.description]
-
-        cursor.close()
-        cnx.close()
-
-        return Table(header,rows)

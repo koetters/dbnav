@@ -1,5 +1,6 @@
 from collections import Counter
-
+from dbnav.table import Table
+import mysql.connector
 
 class Scale(object):
 
@@ -201,6 +202,7 @@ class DBContextFamily(object):
         self.password = password
         self.host = host
         self.database = database
+        # self.rcontexts = {}
         self.mvas = {}
         self._next_id = 1
 
@@ -255,6 +257,67 @@ class DBContextFamily(object):
                     if s == sort:
                         links.append({"linkID": mvaID, "roleID": i})
         return links
+
+    def _to_sql(self, graph, window, rwindow=[]):
+
+        select = []
+        from_ = []
+        where = []
+
+        # select clause
+        for node_id in window:
+            node = graph.nodes[node_id]
+            select.append("{0} AS '{1}:{2}'".format(self.print_sql(node.sort, node_id),
+                                                    node.sort, node_id))
+
+        for rnode_id in rwindow:
+            rnode = graph.rnodes[rnode_id]
+            select.append("{0} AS '{1}({2})'".format(self.mva_sql(rnode.context_id, rnode.endpoints),
+                                                     rnode.context_name, ",".join(rnode.endpoints)))
+
+        #  select clause: if a single subject was given, include its display attributes
+        if len(window) == 1:
+            node = graph.nodes[window[0]]
+            for mva_id in node.display:
+                mva_name = self.mvas[mva_id].name
+                select.append("{0} AS '{1}({2})'".format(self.mva_sql(mva_id, [window[0]]),
+                                                         mva_name, window[0]))
+
+        # from clause
+        for node_id, node in graph.nodes.items():
+            from_.append("{0} AS {1}".format(node.sort, node_id))
+
+        # where clause
+        for rnode in graph.rnodes.values():
+            where.append(self.pattern_sql(rnode.context_id, rnode.label, rnode.endpoints))
+
+        query = ("SELECT DISTINCT " + ", ".join(select) + " FROM " + ", ".join(from_)
+                 + (" WHERE " if where else "") + " AND ".join(where))
+
+        return query
+
+    def result_table(self, graph, window, rwindow):
+
+        # check if the graph is trivial (isolated node).
+        # theory-wise, returning an empty table is wrong; but it's convenient
+        if len(graph.nodes) == 1 and len(graph.rnodes) == 0 and next(iter(graph.nodes.values())).sort is None:
+            return Table([],[])
+
+        query = self._to_sql(graph, window, rwindow)
+
+        ## query the database
+        cnx = mysql.connector.connect(user=self.user, password=self.password,
+                                      host=self.host, database=self.database)
+        cursor = cnx.cursor()
+
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        header = [t[0] for t in cursor.description]
+
+        cursor.close()
+        cnx.close()
+
+        return Table(header,rows)
 
     def to_dict(self):
         return {
