@@ -1,0 +1,617 @@
+{
+    "_cls": "FacetedPowerContextFamily",
+    "_mod": "dbnav.faceted_pcf",
+    "object_context": {
+        "_cls": "FormalContext",
+        "_mod": "dbnav.faceted_pcf",
+        "_next_id": 18,
+        "attributes": [
+            "Author",
+            "Book"
+        ],
+        "incidence": [
+            [
+                "g1",
+                "Author"
+            ],
+            [
+                "g10",
+                "Book"
+            ],
+            [
+                "g11",
+                "Book"
+            ],
+            [
+                "g12",
+                "Book"
+            ],
+            [
+                "g13",
+                "Book"
+            ],
+            [
+                "g14",
+                "Book"
+            ],
+            [
+                "g15",
+                "Book"
+            ],
+            [
+                "g16",
+                "Book"
+            ],
+            [
+                "g17",
+                "Book"
+            ],
+            [
+                "g2",
+                "Author"
+            ],
+            [
+                "g3",
+                "Author"
+            ],
+            [
+                "g4",
+                "Author"
+            ],
+            [
+                "g5",
+                "Author"
+            ],
+            [
+                "g6",
+                "Author"
+            ],
+            [
+                "g7",
+                "Author"
+            ],
+            [
+                "g8",
+                "Book"
+            ],
+            [
+                "g9",
+                "Book"
+            ]
+        ],
+        "objects": {
+            "g1": "Lewis Carroll",
+            "g10": "Hitchhiker's Guide",
+            "g11": "Harry Potter 7",
+            "g12": "The Casual Vacancy",
+            "g13": "Trigger Warning",
+            "g14": "The Shining",
+            "g15": "Doctor Sleep",
+            "g16": "The Da Vinci Code",
+            "g17": "Inferno",
+            "g2": "Virginia Woolf",
+            "g3": "Douglas Adams",
+            "g4": "Neil Gaiman",
+            "g5": "J. K. Rowling",
+            "g6": "Stephen King",
+            "g7": "Dan Brown",
+            "g8": "Alice in Wonderland",
+            "g9": "To the Lighthouse"
+        }
+    },
+    "rcontexts": {
+        "DOB": {
+            "_cls": "RelationContext",
+            "_mod": "dbnav.faceted_pcf",
+            "_next_id": 8,
+            "attributes": [
+                "19C",
+                "20C",
+                "21C"
+            ],
+            "incidence": [
+                [
+                    "t1",
+                    "19C"
+                ],
+                [
+                    "t2",
+                    "19C"
+                ],
+                [
+                    "t3",
+                    "20C"
+                ],
+                [
+                    "t4",
+                    "20C"
+                ],
+                [
+                    "t5",
+                    "20C"
+                ],
+                [
+                    "t6",
+                    "20C"
+                ],
+                [
+                    "t7",
+                    "20C"
+                ]
+            ],
+            "objects": {
+                "t1": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g1"
+                    ]
+                },
+                "t2": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g2"
+                    ]
+                },
+                "t3": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g3"
+                    ]
+                },
+                "t4": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g4"
+                    ]
+                },
+                "t5": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g5"
+                    ]
+                },
+                "t6": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g6"
+                    ]
+                },
+                "t7": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g7"
+                    ]
+                }
+            },
+            "roles": null,
+            "rsort": [
+                "Author"
+            ]
+        },
+        "nationality": {
+            "_cls": "RelationContext",
+            "_mod": "dbnav.faceted_pcf",
+            "_next_id": 8,
+            "attributes": [
+                "GB",
+                "USA"
+            ],
+            "incidence": [
+                [
+                    "t1",
+                    "GB"
+                ],
+                [
+                    "t2",
+                    "GB"
+                ],
+                [
+                    "t3",
+                    "GB"
+                ],
+                [
+                    "t4",
+                    "GB"
+                ],
+                [
+                    "t5",
+                    "GB"
+                ],
+                [
+                    "t6",
+                    "USA"
+                ],
+                [
+                    "t7",
+                    "USA"
+                ]
+            ],
+            "objects": {
+                "t1": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g1"
+                    ]
+                },
+                "t2": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g2"
+                    ]
+                },
+                "t3": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g3"
+                    ]
+                },
+                "t4": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g4"
+                    ]
+                },
+                "t5": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g5"
+                    ]
+                },
+                "t6": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g6"
+                    ]
+                },
+                "t7": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g7"
+                    ]
+                }
+            },
+            "roles": null,
+            "rsort": [
+                "Author"
+            ]
+        },
+        "pubdate": {
+            "_cls": "RelationContext",
+            "_mod": "dbnav.faceted_pcf",
+            "_next_id": 11,
+            "attributes": [
+                "19C",
+                "20C",
+                "21C"
+            ],
+            "incidence": [
+                [
+                    "t1",
+                    "19C"
+                ],
+                [
+                    "t10",
+                    "21C"
+                ],
+                [
+                    "t2",
+                    "20C"
+                ],
+                [
+                    "t3",
+                    "20C"
+                ],
+                [
+                    "t4",
+                    "21C"
+                ],
+                [
+                    "t5",
+                    "21C"
+                ],
+                [
+                    "t6",
+                    "21C"
+                ],
+                [
+                    "t7",
+                    "20C"
+                ],
+                [
+                    "t8",
+                    "21C"
+                ],
+                [
+                    "t9",
+                    "21C"
+                ]
+            ],
+            "objects": {
+                "t1": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g8"
+                    ]
+                },
+                "t10": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g17"
+                    ]
+                },
+                "t2": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g9"
+                    ]
+                },
+                "t3": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g10"
+                    ]
+                },
+                "t4": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g11"
+                    ]
+                },
+                "t5": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g12"
+                    ]
+                },
+                "t6": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g13"
+                    ]
+                },
+                "t7": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g14"
+                    ]
+                },
+                "t8": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g15"
+                    ]
+                },
+                "t9": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g16"
+                    ]
+                }
+            },
+            "roles": null,
+            "rsort": [
+                "Book"
+            ]
+        },
+        "wrote": {
+            "_cls": "RelationContext",
+            "_mod": "dbnav.faceted_pcf",
+            "_next_id": 11,
+            "attributes": [
+                "age\u226430",
+                "age\u226440",
+                "age\u226450",
+                "wrote"
+            ],
+            "incidence": [
+                [
+                    "t1",
+                    "age\u226440"
+                ],
+                [
+                    "t1",
+                    "age\u226450"
+                ],
+                [
+                    "t1",
+                    "wrote"
+                ],
+                [
+                    "t10",
+                    "age\u226450"
+                ],
+                [
+                    "t10",
+                    "wrote"
+                ],
+                [
+                    "t2",
+                    "age\u226450"
+                ],
+                [
+                    "t2",
+                    "wrote"
+                ],
+                [
+                    "t3",
+                    "age\u226430"
+                ],
+                [
+                    "t3",
+                    "age\u226440"
+                ],
+                [
+                    "t3",
+                    "age\u226450"
+                ],
+                [
+                    "t3",
+                    "wrote"
+                ],
+                [
+                    "t4",
+                    "wrote"
+                ],
+                [
+                    "t5",
+                    "age\u226450"
+                ],
+                [
+                    "t5",
+                    "wrote"
+                ],
+                [
+                    "t6",
+                    "age\u226450"
+                ],
+                [
+                    "t6",
+                    "wrote"
+                ],
+                [
+                    "t7",
+                    "age\u226430"
+                ],
+                [
+                    "t7",
+                    "age\u226440"
+                ],
+                [
+                    "t7",
+                    "age\u226450"
+                ],
+                [
+                    "t7",
+                    "wrote"
+                ],
+                [
+                    "t8",
+                    "wrote"
+                ],
+                [
+                    "t9",
+                    "age\u226440"
+                ],
+                [
+                    "t9",
+                    "age\u226450"
+                ],
+                [
+                    "t9",
+                    "wrote"
+                ]
+            ],
+            "objects": {
+                "t1": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g1",
+                        "g8"
+                    ]
+                },
+                "t10": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g7",
+                        "g17"
+                    ]
+                },
+                "t2": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g2",
+                        "g9"
+                    ]
+                },
+                "t3": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g3",
+                        "g10"
+                    ]
+                },
+                "t4": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g4",
+                        "g13"
+                    ]
+                },
+                "t5": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g5",
+                        "g11"
+                    ]
+                },
+                "t6": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g5",
+                        "g12"
+                    ]
+                },
+                "t7": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g6",
+                        "g14"
+                    ]
+                },
+                "t8": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g6",
+                        "g15"
+                    ]
+                },
+                "t9": {
+                    "_cls": "ObjectTuple",
+                    "_mod": "dbnav.faceted_pcf",
+                    "endpoints": [
+                        "g7",
+                        "g16"
+                    ]
+                }
+            },
+            "roles": null,
+            "rsort": [
+                "Author",
+                "Book"
+            ]
+        }
+    }
+}
