@@ -132,6 +132,10 @@ class Graph(object):
         else:
             self.rnodes[node_id].point = Point(x,y)
 
+    # returns the sort constraints (as a list of sorts) that are imposed on a given node by its incident rnodes
+    def lock_set(self, node_id):
+        pass
+
     def merge(self, node_id, target_id):
 
         node = self.nodes[node_id]

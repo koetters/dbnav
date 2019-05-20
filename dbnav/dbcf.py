@@ -258,6 +258,9 @@ class DBContextFamily(object):
                         links.append({"linkID": mvaID, "roleID": i})
         return links
 
+    def count_by_sort(self, objects):
+        pass
+
     def _to_sql(self, graph, window, rwindow=[]):
 
         select = []
