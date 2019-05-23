@@ -2,19 +2,24 @@ from collections import Counter
 from dbnav.table import Table
 import mysql.connector
 
+
+class SupremumUndefinedError(Exception):
+    pass
+
+
 class Scale(object):
 
     def pattern_sql(self, label):
-        pass
+        raise NotImplementedError
 
     def stats(self, values):
-        pass
+        raise NotImplementedError
 
     def top(self):
-        pass
+        raise NotImplementedError
 
     def supremum(self):
-        pass
+        raise NotImplementedError
 
     def get_class(self):
         return type(self).__name__
@@ -80,7 +85,7 @@ class DateIntervalScale(Scale):
             self.maxdate = mindate + self.nbins * step
 
     def pattern_sql(self, label):
-        return "{{0}} BETWEEN '{0}-01-01' AND '{1}-12-31'".format(label[0],label[1])
+        return "{{0}} BETWEEN '{0}-01-01' AND '{1}-12-31'".format(label[0], label[1])
 
     def stats(self, values):
 
@@ -135,7 +140,6 @@ class ManyValuedAttribute(object):
                 self.roles = ['ARG{0}'.format(i+1) for i, s in enumerate(sort)]
         else:
             self.roles = roles
-        self.scale = None
 
     def sql(self, node_ids):
         return self.sqldef.format(*node_ids)
@@ -148,7 +152,6 @@ class ManyValuedAttribute(object):
             "datatype": self.datatype,
             "name": self.name,
             "roles": self.roles,
-            "scale": self.scale,
             "sort": self.sort,
             "sqldef": self.sqldef,
         }
@@ -156,7 +159,6 @@ class ManyValuedAttribute(object):
     @classmethod
     def from_dict(cls, obj):
         mva = cls(obj["name"], obj["sort"], obj["datatype"], obj["sqldef"], obj["roles"])
-        mva.scale = obj["scale"]
         return mva
 
 
@@ -169,7 +171,6 @@ class DBColumn(ManyValuedAttribute):
     @classmethod
     def from_dict(cls, obj):
         mva = cls(obj["name"], obj["sort"], obj["datatype"])
-        mva.scale = obj["scale"]
         mva.roles = obj["roles"]
         return mva
 
@@ -189,9 +190,55 @@ class ForeignKey(ManyValuedAttribute):
     @classmethod
     def from_dict(cls, obj):
         mva = cls(obj["name"], obj["sort"], obj["columns"])
-        mva.scale = obj["scale"]
         mva.roles = obj["roles"]
         return mva
+
+
+class ScaledContext(object):
+
+    # TODO Both mva_id and mva are stored because they are needed at different parts of the program.
+    #  If the mva_id is not stored, then how can we be sure that this mva is equal (or not) to an mva
+    #  in DBContextFamily.mvas? After serialization/deserialization, these might be two different objects
+    #  (as it is implemented now). And if the mva is not stored, then how can it be retrieved, should the
+    #  context really know the context family? Or should the context family act as a proxy for ScaledContext
+    #  (i.e. other code never talks to ScaledContext directly)? But that would flatten the API ...
+    def __init__(self, mva_id, mva, scale):
+        self.mva_id = mva_id
+        self.mva = mva
+        self.scale = scale
+
+    @property
+    def name(self):
+        return self.mva.name
+
+    @property
+    def sort(self):
+        return self.mva.sort
+
+    @property
+    def roles(self):
+        return self.mva.roles
+
+    def mva_sql(self, args):
+        return self.mva.sql(args)
+
+    def pattern_sql(self, label, args):
+        return self.scale.pattern_sql(label).format(self.mva.sql(args))
+
+    # TODO relying on column [len(self.sort)] to contain the mva-values seems too error-prone
+    def stats(self, table):
+        return self.scale.stats([row[len(self.sort)] for row in table.rows])
+
+    def to_dict(self):
+        return {
+            "mva_id": self.mva_id,
+            "mva": self.mva,
+            "scale": self.scale,
+        }
+
+    @classmethod
+    def from_dict(cls, obj):
+        return cls(obj["mva_id"], obj["mva"], obj["scale"])
 
 
 class DBContextFamily(object):
@@ -202,12 +249,39 @@ class DBContextFamily(object):
         self.password = password
         self.host = host
         self.database = database
-        # self.rcontexts = {}
+        self.rcontexts = {}
         self.mvas = {}
         self._next_id = 1
 
+    @property
     def sorts(self):
         return sorted(self.output.keys())
+
+    # There is possible confusion regarding the sort order: we represent sorts by patterns, and pattern1 <= pattern2
+    # means that pattern1 represents a supersort (not subsort!!) of pattern2. The rationale is that sorts can be
+    # understood as pattern concepts (obtained from the pcf's object context), and then the order on pattern intents
+    # is indeed dual to the subsort order (cf. "Pattern structures and their projections" by Ganter & Kuznetsov,
+    # where the infimum, there called "similarity operation", is a generalization operation). If patterns are
+    # attribute sets (as in standard FCA), then the pattern order is the subset order (with infimum=intersection,
+    # supremum=union).
+    def sort_leq(self, pattern1, pattern2):
+        if pattern1 is None or pattern2 is None:
+            return pattern2 is None
+        return pattern1 == pattern2
+
+    # cf. the above remark for sort_leq
+    def sort_sup(self, pattern1, pattern2):
+
+        if pattern1 is None:
+            return pattern2
+
+        elif pattern2 is None:
+            return pattern1
+
+        elif pattern1 != pattern2:
+            raise SupremumUndefinedError
+
+        return pattern1
 
     def add_column(self, name, sort, datatype):
         mva_id = "m" + str(self._next_id)
@@ -227,6 +301,7 @@ class DBContextFamily(object):
         self.mvas[mva_id] = ManyValuedAttribute(name, sort, datatype, sqldef, roles)
         return mva_id
 
+    # TODO: What happens if the deleted mva is being used by an rcontext?
     def delete_mva(self, name):
         self.mvas = {mva_id: mva for mva_id, mva in self.mvas.items() if mva_id != name}
 
@@ -234,34 +309,26 @@ class DBContextFamily(object):
         self.output[sort] = sqldef
 
     def scale_mva(self, mva_id, scale):
-        self.mvas[mva_id].scale = scale
+        self.rcontexts[mva_id] = ScaledContext(mva_id, self.mvas[mva_id], scale)
 
     def print_sql(self, sort, node_id):
         return self.output[sort].format(node_id)
 
-    def mva_sql(self, mva_id, node_ids):
-        mva = self.mvas[mva_id]
-        return mva.sql(node_ids)
-
-    def pattern_sql(self, mva_id, label, endpoints):
-        mva = self.mvas[mva_id]
-        sql_term = mva.sql(endpoints)
-        return mva.scale.pattern_sql(label).format(sql_term)
-
     def neighbors(self, sort):
 
         links = []
-        for mvaID, mva in self.mvas.items():
-            if mva.scale is not None:
-                for i, s in enumerate(mva.sort, 1):
-                    if s == sort:
-                        links.append({"linkID": mvaID, "roleID": i})
+        for rcontext_id, rcontext in self.rcontexts.items():
+            for i, s in enumerate(rcontext.sort, 1):
+                if s == sort:
+                    links.append({"linkID": rcontext_id, "roleID": i})
         return links
 
     def count_by_sort(self, objects):
         pass
 
-    def _to_sql(self, graph, window, rwindow=[]):
+    def _to_sql(self, graph, window, rwindow=None):
+
+        rwindow = rwindow or []
 
         select = []
         from_ = []
@@ -270,21 +337,23 @@ class DBContextFamily(object):
         # select clause
         for node_id in window:
             node = graph.nodes[node_id]
-            select.append("{0} AS '{1}:{2}'".format(self.print_sql(node.sort, node_id),
-                                                    node.sort, node_id))
+            select.append("{0} AS 'node:{1}'".format(self.print_sql(node.sort, node_id), node_id))
 
         for rnode_id in rwindow:
             rnode = graph.rnodes[rnode_id]
-            select.append("{0} AS '{1}({2})'".format(self.mva_sql(rnode.context_id, rnode.endpoints),
-                                                     rnode.context_name, ",".join(rnode.endpoints)))
+            rcontext = self.rcontexts[rnode.context_id]
+            select.append("{0} AS 'rnode:{1}'".format(rcontext.mva_sql(rnode.endpoints), rnode_id))
 
-        #  select clause: if a single subject was given, include its display attributes
+        #  select clause: if a single subject was given, include its display attributes.
+        #  the column name is display:{1}:{2}:{3} where {1} states the string length of {2},
+        #  so that {2} and {3} can be reconstructed (even if {2} contains ":").
+        #  TODO: to prevent such a hack, the graph could e.g. allow retrieval of {2} and {3} from a "display id"
         if len(window) == 1:
             node = graph.nodes[window[0]]
-            for mva_id in node.display:
-                mva_name = self.mvas[mva_id].name
-                select.append("{0} AS '{1}({2})'".format(self.mva_sql(mva_id, [window[0]]),
-                                                         mva_name, window[0]))
+            for context_id in node.display:
+                rcontext = self.rcontexts[context_id]
+                select.append("{0} AS 'display:{1}:{2}:{3}'".format(rcontext.mva_sql([window[0]]), len(window[0]),
+                                                                 window[0], context_id))
 
         # from clause
         for node_id, node in graph.nodes.items():
@@ -292,7 +361,9 @@ class DBContextFamily(object):
 
         # where clause
         for rnode in graph.rnodes.values():
-            where.append(self.pattern_sql(rnode.context_id, rnode.label, rnode.endpoints))
+            rcontext = self.rcontexts[rnode.context_id]
+            condition = rcontext.pattern_sql(rnode.label, rnode.endpoints)
+            where.append(condition)
 
         query = ("SELECT DISTINCT " + ", ".join(select) + " FROM " + ", ".join(from_)
                  + (" WHERE " if where else "") + " AND ".join(where))
@@ -304,11 +375,11 @@ class DBContextFamily(object):
         # check if the graph is trivial (isolated node).
         # theory-wise, returning an empty table is wrong; but it's convenient
         if len(graph.nodes) == 1 and len(graph.rnodes) == 0 and next(iter(graph.nodes.values())).sort is None:
-            return Table([],[])
+            return Table([], [])
 
         query = self._to_sql(graph, window, rwindow)
 
-        ## query the database
+        #  query the database
         cnx = mysql.connector.connect(user=self.user, password=self.password,
                                       host=self.host, database=self.database)
         cursor = cnx.cursor()
@@ -320,7 +391,76 @@ class DBContextFamily(object):
         cursor.close()
         cnx.close()
 
-        return Table(header,rows)
+        def rename(colname):
+
+            type_, key = colname.split(":",1)
+            assert(type_ in ["node", "rnode", "display"])
+
+            if type_ == "node":
+                node = graph.nodes[key]
+                return "{0}:{1}".format(node.sort, key)
+
+            elif type_ == "rnode":
+                rnode = graph.rnodes[key]
+                mva = self.rcontexts[rnode.context_id].mva
+                return "{0}({1})".format(mva.name, ",".join(rnode.endpoints))
+
+            # TODO: maybe refactor to get rid of complicated encoding scheme (see remark in _to_sql function)
+            elif type_ == "display":
+                length1, keys = key.split(":",1)
+                length1 = int(length1)
+                assert keys[length1] == ":"
+                node_id = keys[:length1]
+                context_id = keys[length1+1:]
+                mva = self.rcontexts[context_id].mva
+                return "{0}.{1}".format(node_id, mva.name)
+
+        header = [rename(colname) for colname in header]
+        return Table(header, rows)
+
+    def stats(self, sort, table, lock_set):
+
+        if not table.header:
+            select = 'SELECT "{0}" AS sort, COUNT(*) AS count FROM {1}.{0}'
+            parts = [select.format(table_name, self.database) for table_name in self.sorts]
+            query = " UNION ".join(parts)
+
+            cnx = mysql.connector.connect(user=self.user, password=self.password,
+                                          host=self.host, database=self.database)
+            cursor = cnx.cursor()
+
+            # # the information_schema values turned out to be unreliable for InnoDB tables
+            # query = "SELECT table_name,table_rows FROM information_schema.tables WHERE table_schema='{0}'"
+            cursor.execute(query)
+            rows = cursor.fetchall()
+
+            cursor.close()
+            cnx.close()
+
+            attributes = []
+            object_count = 0
+
+            for row in rows:
+                attributes.append({"name": row[0], "attributeID": row[0], "count": int(row[1]),
+                                   "selected": False, "disabled": int(row[1]) == 0})
+                object_count += int(row[1])
+
+            stats = {"sorts": attributes, "objectCount": object_count}
+            return stats
+
+        else:
+            attributes = []
+            for s in self.sorts:
+                if s == sort:
+                    attributes.append({"name": s, "attributeID": s, "count": len(table.rows),
+                                       "selected": True, "disabled": s in lock_set})
+                else:
+                    attributes.append({"name": s, "attributeID": s, "count": 0,
+                                       "selected": False, "disabled": True})
+            attributes.sort(key=lambda x: x["name"])
+
+            stats = {"sorts": attributes, "objectCount": len(table.rows)}
+            return stats
 
     def to_dict(self):
         return {
@@ -330,6 +470,7 @@ class DBContextFamily(object):
             "host": self.host,
             "database": self.database,
             "mvas": self.mvas,
+            "rcontexts": self.rcontexts,
             "_next_id": self._next_id,
         }
 
@@ -337,5 +478,6 @@ class DBContextFamily(object):
     def from_dict(cls, obj):
         pcf = DBContextFamily(obj["output"], obj["user"], obj["password"], obj["host"], obj["database"])
         pcf.mvas = dict(obj["mvas"])
+        pcf.rcontexts = dict(obj["rcontexts"])
         pcf._next_id = obj["_next_id"]
         return pcf

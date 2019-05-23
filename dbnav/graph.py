@@ -15,8 +15,8 @@ class Point(object):
         }
 
     @classmethod
-    def from_dict(cls,obj):
-        return Point(obj["x"],obj["y"])
+    def from_dict(cls, obj):
+        return Point(obj["x"], obj["y"])
 
 
 class Node(object):
@@ -35,7 +35,7 @@ class Node(object):
         }
 
     @classmethod
-    def from_dict(cls,obj):
+    def from_dict(cls, obj):
         node = Node(obj["sort"])
         node.display = obj["display"]
         node.point = obj["point"]
@@ -46,6 +46,7 @@ class RNode(object):
 
     def __init__(self, context_id, context_name, endpoints, label):
 
+        # TODO how to get rid of context_name? it violates the DRY principle ...
         self.context_id = context_id
         self.context_name = context_name
         self.endpoints = endpoints
@@ -62,8 +63,8 @@ class RNode(object):
         }
 
     @classmethod
-    def from_dict(cls,obj):
-        rnode = RNode(obj["context_id"],obj["context_name"],obj["endpoints"],obj["label"])
+    def from_dict(cls, obj):
+        rnode = RNode(obj["context_id"], obj["context_name"], obj["endpoints"], obj["label"])
         rnode.point = obj["point"]
         return rnode
 
@@ -89,22 +90,24 @@ class Graph(object):
             self.nodes[node_id].point = pos
         return node_id
 
-    def add_rnode(self, mva_id, endpoints, pos=None):
+    def add_rnode(self, context_id, endpoints, pos=None):
 
-        mva = self.pcf.mvas[mva_id]
-        scale = mva.scale
+        rcontext = self.pcf.rcontexts[context_id]
+        mva = rcontext.mva
         rsort = mva.sort
-        assert(mva.scale is not None and len(endpoints) == len(rsort))
+        scale = rcontext.scale
+
+        assert(len(endpoints) == len(rsort))
 
         for i, n in enumerate(endpoints):
             if n is None:
                 endpoints[i] = self.add_node(rsort[i])
             else:
-                assert(self.nodes[n].sort == rsort[i])
+                assert(self.pcf.sort_leq(rsort[i], self.nodes[n].sort))
 
         rnode_id = "e" + str(self._next_rid)
         self._next_rid += 1
-        self.rnodes[rnode_id] = RNode(mva_id, mva.name, endpoints, scale.top())
+        self.rnodes[rnode_id] = RNode(context_id, rcontext.name, endpoints, scale.top())
         if pos is None:
             self.rnodes[rnode_id].point = Point(200, 200)
         else:
@@ -128,19 +131,23 @@ class Graph(object):
     def set_position(self, node_id, x, y):
         # TODO: ensure (in the graph class) that node ID's and rnode ID's are disjoint
         if node_id in self.nodes:
-            self.nodes[node_id].point = Point(x,y)
+            self.nodes[node_id].point = Point(x, y)
         else:
-            self.rnodes[node_id].point = Point(x,y)
+            self.rnodes[node_id].point = Point(x, y)
 
-    # returns the sort constraints (as a list of sorts) that are imposed on a given node by its incident rnodes
+    def get_context(self, rnode_id):
+        context_id = self.rnodes[rnode_id].context_id
+        return self.pcf.rcontexts[context_id]
+
+    # returns the sort constraints (as a set of sorts) that are imposed on a given node by its incident rnodes
     def lock_set(self, node_id):
-        pass
+        return {self.get_context(link["linkID"]).sort[link["roleID"]-1] for link in self.neighbors(node_id)}
 
     def merge(self, node_id, target_id):
 
         node = self.nodes[node_id]
         target = self.nodes[target_id]
-        assert(node.sort == target.sort)
+        target_sort = self.pcf.sort_sup(node.sort, target.sort)
 
         hashtable = {}
         quotient = Graph(self.pcf)
@@ -149,6 +156,7 @@ class Graph(object):
             if x != node_id:
                 quotient.nodes[x] = copy.deepcopy(node)
 
+        quotient.nodes[target_id].sort = target_sort
         quotient.nodes[target_id].display |= self.nodes[node_id].display
 
         for rnode_id, rnode in self.rnodes.items():
@@ -161,7 +169,7 @@ class Graph(object):
 
             else:
                 qnode = quotient.rnodes[hashtable[key]]
-                scale = self.pcf.mvas[key[0]].scale
+                scale = self.pcf.rcontexts[key[0]].scale
                 qnode.label = scale.supremum(qnode.label, rnode.label)
 
         self.nodes = quotient.nodes
@@ -196,6 +204,28 @@ class Graph(object):
 
         return component
 
+    def stats(self, node_id):
+
+        table = self.extent(node_id)
+        # TODO check whether sort really needs to be passed as a parameter. currently this in only needed
+        #  because the DB backend can't figure the sort of objects from the table. This could be done by
+        #  either supplementing sort info in column headers, or by putting sort info directly on the
+        #  objects (i.e. prefixing with the sort).
+        return self.pcf.stats(self.nodes[node_id].sort, table, self.lock_set(node_id))
+
+    def rstats(self, rnode_id):
+
+        table = self.rextent(rnode_id)
+        return self.get_context(rnode_id).stats(table)
+
+    def extent(self, node_id):
+        # passing "self" undoubtedly looks strange; it is a consequence of pcf being an attribute of graph;
+        # TODO: rename this class e.g. navigation_state or semiconcept, pass self.graph instead of "self"
+        return self.pcf.result_table(self, [node_id], [])
+
+    def rextent(self, rnode_id):
+        return self.pcf.result_table(self, self.rnodes[rnode_id].endpoints, [rnode_id])
+
     def to_dict(self):
         return {
             "pcf": self.pcf,
@@ -206,26 +236,10 @@ class Graph(object):
         }
 
     @classmethod
-    def from_dict(cls,obj):
+    def from_dict(cls, obj):
         graph = Graph(obj["pcf"])
         graph.nodes = obj["nodes"]
         graph.rnodes = obj["rnodes"]
         graph._next_id = obj["_next_id"]
         graph._next_rid = obj["_next_rid"]
         return graph
-
-    def result_table(self,node_id,rnode_id):
-
-        if rnode_id is None:
-            window = [node_id]
-            rwindow = []
-        else:
-            endpoints = self.rnodes[rnode_id].endpoints
-            window = endpoints
-            rwindow = [rnode_id]
-
-        # passing "self" undoubtedly looks strange; it is a consequence of pcf being an attribute of graph;
-        # TODO: rename this class e.g. navigation_state or semiconcept, pass self.graph instead of "self"
-        return self.pcf.result_table(self,window,rwindow)
-
-

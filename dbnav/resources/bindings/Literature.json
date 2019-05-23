@@ -1,7 +1,7 @@
 {
     "_cls": "DBContextFamily",
     "_mod": "dbnav.dbcf",
-    "_next_id": 15,
+    "_next_id": 10,
     "database": "Literature",
     "host": "localhost",
     "mvas": {
@@ -13,48 +13,10 @@
             "roles": [
                 "ATTR"
             ],
-            "scale": null,
             "sort": [
                 "Author"
             ],
             "sqldef": "{0}.id"
-        },
-        "m11": {
-            "_cls": "ManyValuedAttribute",
-            "_mod": "dbnav.dbcf",
-            "datatype": "varchar",
-            "name": "full_name",
-            "roles": [
-                "ATTR"
-            ],
-            "scale": null,
-            "sort": [
-                "Author"
-            ],
-            "sqldef": "CONCAT({0}.last_name,', ',{0}.first_name)"
-        },
-        "m12": {
-            "_cls": "ForeignKey",
-            "_mod": "dbnav.dbcf",
-            "columns": [
-                "id",
-                "author"
-            ],
-            "datatype": "bool",
-            "name": "wrote",
-            "roles": [
-                "AGT",
-                "OBJ"
-            ],
-            "scale": {
-                "_cls": "BooleanScale",
-                "_mod": "dbnav.dbcf"
-            },
-            "sort": [
-                "Author",
-                "Book"
-            ],
-            "sqldef": "IF({0}.id={1}.author,1,0)"
         },
         "m2": {
             "_cls": "DBColumn",
@@ -64,7 +26,6 @@
             "roles": [
                 "ATTR"
             ],
-            "scale": null,
             "sort": [
                 "Author"
             ],
@@ -78,7 +39,6 @@
             "roles": [
                 "ATTR"
             ],
-            "scale": null,
             "sort": [
                 "Author"
             ],
@@ -92,10 +52,6 @@
             "roles": [
                 "ATTR"
             ],
-            "scale": {
-                "_cls": "PrefixScale",
-                "_mod": "dbnav.dbcf"
-            },
             "sort": [
                 "Author"
             ],
@@ -109,13 +65,6 @@
             "roles": [
                 "ATTR"
             ],
-            "scale": {
-                "_cls": "DateIntervalScale",
-                "_mod": "dbnav.dbcf",
-                "maxdate": 2000,
-                "mindate": 1800,
-                "step": 10
-            },
             "sort": [
                 "Author"
             ],
@@ -129,7 +78,6 @@
             "roles": [
                 "ATTR"
             ],
-            "scale": null,
             "sort": [
                 "Book"
             ],
@@ -143,7 +91,6 @@
             "roles": [
                 "ATTR"
             ],
-            "scale": null,
             "sort": [
                 "Book"
             ],
@@ -157,17 +104,29 @@
             "roles": [
                 "ATTR"
             ],
-            "scale": {
-                "_cls": "DateIntervalScale",
-                "_mod": "dbnav.dbcf",
-                "maxdate": 2000,
-                "mindate": 1800,
-                "step": 10
-            },
             "sort": [
                 "Book"
             ],
             "sqldef": "{0}.publication_date"
+        },
+        "m9": {
+            "_cls": "ForeignKey",
+            "_mod": "dbnav.dbcf",
+            "columns": [
+                "author",
+                "id"
+            ],
+            "datatype": "bool",
+            "name": "wrote",
+            "roles": [
+                "ARG1",
+                "ARG2"
+            ],
+            "sort": [
+                "Book",
+                "Author"
+            ],
+            "sqldef": "IF({0}.author={1}.id,1,0)"
         }
     },
     "output": {
@@ -175,5 +134,107 @@
         "Book": "{0}.title"
     },
     "password": "dbnav",
+    "rcontexts": {
+        "m4": {
+            "_cls": "ScaledContext",
+            "_mod": "dbnav.dbcf",
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "nationality",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Author"
+                ],
+                "sqldef": "{0}.nationality"
+            },
+            "mva_id": "m4",
+            "scale": {
+                "_cls": "PrefixScale",
+                "_mod": "dbnav.dbcf"
+            }
+        },
+        "m5": {
+            "_cls": "ScaledContext",
+            "_mod": "dbnav.dbcf",
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "date",
+                "name": "date_of_birth",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Author"
+                ],
+                "sqldef": "{0}.date_of_birth"
+            },
+            "mva_id": "m5",
+            "scale": {
+                "_cls": "DateIntervalScale",
+                "_mod": "dbnav.dbcf",
+                "maxdate": 2000,
+                "mindate": 1800,
+                "step": 10
+            }
+        },
+        "m8": {
+            "_cls": "ScaledContext",
+            "_mod": "dbnav.dbcf",
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "date",
+                "name": "publication_date",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Book"
+                ],
+                "sqldef": "{0}.publication_date"
+            },
+            "mva_id": "m8",
+            "scale": {
+                "_cls": "DateIntervalScale",
+                "_mod": "dbnav.dbcf",
+                "maxdate": 2000,
+                "mindate": 1800,
+                "step": 10
+            }
+        },
+        "m9": {
+            "_cls": "ScaledContext",
+            "_mod": "dbnav.dbcf",
+            "mva": {
+                "_cls": "ForeignKey",
+                "_mod": "dbnav.dbcf",
+                "columns": [
+                    "author",
+                    "id"
+                ],
+                "datatype": "bool",
+                "name": "wrote",
+                "roles": [
+                    "ARG1",
+                    "ARG2"
+                ],
+                "sort": [
+                    "Book",
+                    "Author"
+                ],
+                "sqldef": "IF({0}.author={1}.id,1,0)"
+            },
+            "mva_id": "m9",
+            "scale": {
+                "_cls": "BooleanScale",
+                "_mod": "dbnav.dbcf"
+            }
+        }
+    },
     "user": "dbnav"
 }

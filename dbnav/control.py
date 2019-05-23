@@ -75,7 +75,7 @@ class Control(object):
                 "args": {
                     "slot": "linksView",
                     "template": "script#links_template",
-                    "data": self.links_view_data(self.state["graph"],self.state["current_node"],
+                    "data": self.links_view_data(self.state["graph"], self.state["current_node"],
                                                  self.state["current_link"]),
                 }
             })
@@ -88,24 +88,24 @@ class Control(object):
                 }
             })
 
-            table = self.state["graph"].result_table(self.state["current_node"],self.state["current_link"]["linkID"])
             views.append({
                 "cmd": "set_table_view",
                 "args": {
                     "slot": "tableView",
                     "template": "script#result_template",
-                    "data": self.table_view_data(table),
+                    "data": self.table_view_data(self.state["graph"], self.state["current_node"],
+                                                 self.state["current_link"]["linkID"]),
                 }
             })
 
-            if self.state["current_link_type"] == None:
+            if self.state["current_link_type"] is None:
 
                 views.append({
                     "cmd": "set_sort_label_view",
                     "args": {
                         "slot": "labelView",
                         "template": "script#sort_label_template",
-                        "data": self.sort_label_view_data(self.state["graph"], self.state["current_node"], table),
+                        "data": self.sort_label_view_data(self.state["graph"], self.state["current_node"]),
                     }
                 })
 
@@ -115,7 +115,7 @@ class Control(object):
                 rnode = self.state["graph"].rnodes[rnode_id]
                 #  TODO: while len(endpoints) is indeed the index of the table's mva column,\
                 #        a more explicit treatment would be less error-prone
-                data = self.label_view_data(self.state["graph"],rnode_id,table,len(rnode.endpoints))
+                data = self.label_view_data(self.state["graph"], rnode_id)
 
                 if self.state["current_link_type"] == "DateIntervalScale":
                     views.append({
@@ -168,7 +168,7 @@ class Control(object):
                 "args": {
                     "slot": "sortsMenu",
                     "template": "script#pcf_sorts_template",
-                    "data": self.pcf_sorts_view_data(pcf,self.state["current_sort"]),
+                    "data": self.pcf_sorts_view_data(pcf, self.state["current_sort"]),
                 }
             })
 
@@ -188,7 +188,7 @@ class Control(object):
                     "args": {
                         "slot": "sortView",
                         "template": "script#sort_api_template",
-                        "data": self.pcf_api_view_data(pcf,self.state["current_sort"],self.state["mva_form2"]),
+                        "data": self.pcf_api_view_data(pcf, self.state["current_sort"], self.state["mva_form2"]),
                     }
                 })
 
@@ -198,7 +198,7 @@ class Control(object):
                         "args": {
                             "slot": "mvaForm1",
                             "template": "script#derived_mva_form_template",
-                            "data": self.derived_mva_form_data(pcf,self.state["mva_form1_data"]),
+                            "data": self.derived_mva_form_data(pcf, self.state["mva_form1_data"]),
                         }
                     })
 
@@ -208,7 +208,7 @@ class Control(object):
                         "args": {
                             "slot": "mvaForm2",
                             "template": "script#derived_mva_form_template",
-                            "data": self.derived_mva_form_data(pcf,self.state["mva_form2_data"]),
+                            "data": self.derived_mva_form_data(pcf, self.state["mva_form2_data"]),
                         }
                     })
 
@@ -218,20 +218,19 @@ class Control(object):
                         "args": {
                             "slot": "mvaForm2",
                             "template": "script#foreign_key_form_template",
-                            "data": self.foreign_key_form_data(pcf,self.state["mva_form2_data"]),
+                            "data": self.foreign_key_form_data(pcf, self.state["mva_form2_data"]),
                         }
                     })
 
-
         return views
 
-## View Updates
+#  View Updates
 
     def index_view_data(self):
         bindings = Storage.ls()
         return bindings
 
-    def links_view_data(self,graph,node_id,selected_link):
+    def links_view_data(self, graph, node_id, selected_link):
         # compute propertyLinks and relationLinks
         properties = {}
         relations = {}
@@ -243,11 +242,11 @@ class Control(object):
         for link in graph.pcf.neighbors(node.sort):
             context_id = link["linkID"]
             role_id = link["roleID"]
-            mva = graph.pcf.mvas[context_id]
-            arity = len(mva.sort)
+            rcontext = graph.pcf.rcontexts[context_id]
+            arity = len(rcontext.sort)
             key = "{0}#{1}".format(role_id, context_id)
-            value = {"edgeID": None, "contextID": context_id, "roleID": role_id, "contextName": mva.name,
-                     "roleName": mva.roles[role_id-1], "exists": False, "selected": False}
+            value = {"edgeID": None, "contextID": context_id, "roleID": role_id, "contextName": rcontext.name,
+                     "roleName": rcontext.roles[role_id-1], "exists": False, "selected": False}
             if arity == 1:
                 value["displayed"] = context_id in node.display
                 properties[key] = value
@@ -259,8 +258,8 @@ class Control(object):
             role_id = link["roleID"]
             rnode = graph.rnodes[rnode_id]
             context_id = rnode.context_id
-            mva = graph.pcf.mvas[context_id]
-            arity = len(mva.sort)
+            rcontext = graph.pcf.rcontexts[context_id]
+            arity = len(rcontext.sort)
             key = "{0}#{1}".format(role_id, context_id)
             if arity == 1:
                 value = properties[key]
@@ -272,8 +271,8 @@ class Control(object):
             else:
                 selected = (selected_link["linkID"] == rnode_id
                             and selected_link["roleID"] == role_id)
-                value = {"edgeID": rnode_id, "contextID": context_id, "roleID": role_id, "contextName": mva.name,
-                         "roleName": mva.roles[role_id-1], "exists": True, "selected": selected}
+                value = {"edgeID": rnode_id, "contextID": context_id, "roleID": role_id, "contextName": rcontext.name,
+                         "roleName": rcontext.roles[role_id-1], "exists": True, "selected": selected}
                 if isinstance(relations[key], list):
                     relations[key].append(value)
                 else:
@@ -290,63 +289,19 @@ class Control(object):
 
         return {"propertyLinks": property_links, "relationLinks": relation_links}
 
-    def sort_label_view_data(self,graph,node_id,table):
-        ## compute stats
-        sort = graph.nodes[node_id].sort
+    def sort_label_view_data(self, graph, node_id):
+        return graph.stats(node_id)
 
-        if sort is None:
-            tables = graph.pcf.sorts()
-            select = 'SELECT "{0}" AS sort, COUNT(*) AS count FROM {1}.{0}'
-            parts = [select.format(table,graph.pcf.database) for table in tables]
-            query = " UNION ".join(parts)
+    def label_view_data(self, graph, rnode_id):
+        return graph.rstats(rnode_id)
 
-            cnx = mysql.connector.connect(user=graph.pcf.user, password=graph.pcf.password,
-                                          host=graph.pcf.host, database=graph.pcf.database)
-            cursor = cnx.cursor()
+    def table_view_data(self, graph, node_id, rnode_id):
 
-            # # the information_schema values turned out to be unreliable for InnoDB tables
-            # query = "SELECT table_name,table_rows FROM information_schema.tables WHERE table_schema='{0}'"
-            cursor.execute(query)
-            rows = cursor.fetchall()
-
-            cursor.close()
-            cnx.close()
-
-            attributes = []
-            object_count = 0
-
-            for row in rows:
-                attributes.append({"name": row[0], "attributeID": row[0], "count": int(row[1]),
-                                   "selected": False, "disabled": int(row[1]) == 0})
-                object_count += int(row[1])
-
-            stats = {"sorts": attributes, "objectCount": object_count}
-            return stats
-
+        if rnode_id is None:
+            table = graph.extent(node_id)
         else:
-            attributes = []
-            for s in graph.pcf.sorts():
-                if s == sort:
-                    attributes.append({"name": s, "attributeID": s, "count": len(table.rows),
-                                       "selected": True, "disabled": len(graph.rnodes) != 0})
-                else:
-                    attributes.append({"name": s, "attributeID": s, "count": 0,
-                                       "selected": False, "disabled": True})
-            attributes.sort(key=lambda x: x["name"])
-
-            stats = {"sorts": attributes, "objectCount": len(table.rows)}
-            return stats
-
-    def label_view_data(self,graph,rnode_id,table,mva_column_index):
-        ## compute stats
-        rnode = graph.rnodes[rnode_id]
-        mva_id = rnode.context_id
-        scale = graph.pcf.mvas[mva_id].scale
-        stats = scale.stats([row[mva_column_index] for row in table.rows])
-        return stats
-
-    def table_view_data(self,table):
-        # process header and rows
+            table = graph.rextent(rnode_id)
+        #  process header and rows
         header = [{"value": value, "width": 200} for value in table.header]
         rows = [None]*len(table.rows)
         for i, row in enumerate(table.rows):
@@ -354,11 +309,11 @@ class Control(object):
 
         return {"header": header, "rows": rows}
 
-    def pcf_sorts_view_data(self,pcf,sort):
-        sort_list = [{"name": s, "selected": s == sort} for s in pcf.sorts()]
+    def pcf_sorts_view_data(self, pcf, sort):
+        sort_list = [{"name": s, "selected": s == sort} for s in pcf.sorts]
         return {"sorts": sort_list}
 
-    def pcf_api_view_data(self,pcf,sort,form2):
+    def pcf_api_view_data(self, pcf, sort, form2):
 
         mva_list = {
             "print_function": pcf.output[sort],
@@ -371,10 +326,15 @@ class Control(object):
             if sort not in mva.sort:
                 continue
 
-            if mva.scale is None:
+            rcontexts = {context_id: context for context_id, context in pcf.rcontexts.items()
+                         if context.mva_id == mva_id}
+
+            assert(len(rcontexts) <= 1)
+            if not rcontexts:
                 current_scale = ""
             else:
-                current_scale = mva.scale.get_class()
+                rcontext = next(iter(rcontexts.values()))
+                current_scale = rcontext.scale.get_class()
 
             scales_list = [""] + Storage.available_scales.get(mva.datatype, [])
 
@@ -394,12 +354,12 @@ class Control(object):
                 mva_list["relations"].append(mva_info)
 
         mva_list["relations"].sort(key=lambda x: "" if x["class"] == "ForeignKey" else x["name"])
-        return {"mvas": mva_list, "forms2": [{"id": "derived", "name":"Derived", "selected": form2 == "derived"},
-                                             {"id": "fk", "name":"Foreign Key", "selected": form2 == "fk"}]}
+        return {"mvas": mva_list, "forms2": [{"id": "derived", "name": "Derived", "selected": form2 == "derived"},
+                                             {"id": "fk", "name": "Foreign Key", "selected": form2 == "fk"}]}
 
-    def derived_mva_form_data(self,pcf,form_data):
+    def derived_mva_form_data(self, pcf, form_data):
         params = []
-        for i in range(1,int(form_data["nargs"])+1):
+        for i in range(1, int(form_data["nargs"])+1):
             sort_key = "sort{0}".format(i)
             role_key = "role{0}".format(i)
             params.append({
@@ -414,14 +374,14 @@ class Control(object):
             "datatype_groups": mysql_types,
             "name": form_data["name"],
             "sqldef": form_data["sqldef"],
-            "sorts": [{"name":s} for s in pcf.sorts()],
+            "sorts": [{"name": s} for s in pcf.sorts],
             "params": params,
             "unary": int(form_data["nargs"]) == 1
         }
 
-    def foreign_key_form_data(self,pcf,form_data):
+    def foreign_key_form_data(self, pcf, form_data):
         params = []
-        for i in [1,2]:
+        for i in [1, 2]:
             sort_key = "sort{0}".format(i)
             column_key = "column{0}".format(i)
             role_key = "role{0}".format(i)
@@ -444,11 +404,11 @@ class Control(object):
             })
         return {
             "name": form_data["name"],
-            "sorts": [{"name": s} for s in pcf.sorts()],
+            "sorts": [{"name": s} for s in pcf.sorts],
             "params": params,
         }
 
-    ## Actions
+    #  Actions
 
     def insert_index_view(self):
         self.state = {"main": "index"}
@@ -473,17 +433,17 @@ class Control(object):
             rnode = self.state["graph"].rnodes[self.state["current_link"]["linkID"]]
             rnode.label = label
 
-    def set_position(self,node_id,x,y):
-        self.state["graph"].set_position(node_id,x,y)
+    def set_position(self, node_id, x, y):
+        self.state["graph"].set_position(node_id, x, y)
 
     def merge(self, target_id):
         self.state["graph"].merge(self.state["current_node"], target_id)
 
     def create_edge(self, context_id, role_id):
         node_id = self.state["current_node"]
-        mva = self.state["graph"].pcf.mvas[context_id]
+        rcontext = self.state["graph"].pcf.rcontexts[context_id]
 
-        endpoints = [None]*len(mva.sort)
+        endpoints = [None]*len(rcontext.sort)
         endpoints[role_id-1] = node_id
         self.state["graph"].add_rnode(context_id, endpoints)
 
@@ -493,9 +453,8 @@ class Control(object):
             self.state["current_link_type"] = None
         else:
             rnode = self.state["graph"].rnodes[edge_id]
-            mva = self.state["graph"].pcf.mvas[rnode.context_id]
-            scale = mva.scale
-            assert(scale is not None)
+            rcontext = self.state["graph"].pcf.rcontexts[rnode.context_id]
+            scale = rcontext.scale
 
             self.state["current_link"] = {"linkID": edge_id, "roleID": role_id}
             self.state["current_link_type"] = scale.get_class()
@@ -531,7 +490,8 @@ class Control(object):
         cursor2 = cnx.cursor()
         query2 = ("SELECT t1.constraint_name, t2.constraint_type, t1.table_name, t1.column_name, "
                   + "t1.referenced_table_name, t1.referenced_column_name "
-                  + "FROM information_schema.key_column_usage AS t1 LEFT JOIN information_schema.table_constraints AS t2 "
+                  + "FROM information_schema.key_column_usage AS t1 "
+                  + "LEFT JOIN information_schema.table_constraints AS t2 "
                   + "ON t1.constraint_name = t2.constraint_name AND t1.table_schema = t2.table_schema "
                   + "AND t1.table_name = t2.table_name "
                   + "WHERE t1.table_schema = '{0}'")
@@ -557,7 +517,7 @@ class Control(object):
 
         Storage.write(pcf, form["name"] if form["name"] else form["database"])
 
-    def select_sort(self,sort):
+    def select_sort(self, sort):
         self.state["current_sort"] = sort
         self.state["mva_form1"] = "derived"
         self.state["mva_form2"] = "derived"
@@ -606,12 +566,12 @@ class Control(object):
                 "role2": "ARG2",
             }
 
-    def update_form1(self,form_data):
+    def update_form1(self, form_data):
         self.state["mva_form1_data"] = form_data
         if self.state["mva_form1"] == "derived":
             assert(int(self.state["mva_form1_data"]["nargs"]) == 1)
 
-    def update_form2(self,form_data):
+    def update_form2(self, form_data):
         self.state["mva_form2_data"] = form_data
         #  TODO: the code below (handling nargs change) probably works, but doesn't look good
         if self.state["mva_form2"] == "derived":
@@ -640,7 +600,7 @@ class Control(object):
                     self.state["mva_form2_data"]["sort{0}".format(nargs)] = self.state["current_sort"]
                     self.state["mva_form2_data"]["role{0}".format(nargs)] = "ARG{0}".format(nargs)
 
-    def create_mva1(self,form_data):
+    def create_mva1(self, form_data):
         pcf = Storage.read(self.state["pcf_name"])
         if self.state["mva_form1"] == "derived":
             # form = self.state["mva_form1_data"]
@@ -654,7 +614,7 @@ class Control(object):
 
             if not (form_data["name"] and form_data["sqldef"] and form_data["datatype"] and form_data["role1"]):
                 return
-            if form_data["sort1"] not in pcf.sorts():
+            if form_data["sort1"] not in pcf.sorts:
                 return
 
             sort = [form_data["sort{0}".format(i+1)] for i in range(int(form_data["nargs"]))]
@@ -671,7 +631,7 @@ class Control(object):
             }
         Storage.write(pcf, self.state["pcf_name"])
 
-    def create_mva2(self,form_data):
+    def create_mva2(self, form_data):
         pcf = Storage.read(self.state["pcf_name"])
         if self.state["mva_form2"] == "derived":
             # form = self.state["mva_form2_data"]
@@ -687,8 +647,8 @@ class Control(object):
 
             if not (form_data["name"] and form_data["sqldef"] and form_data["datatype"]):
                 return
-            for i in range(1,int(form_data["nargs"])+1):
-                if form_data["sort{0}".format(i)] not in pcf.sorts():
+            for i in range(1, int(form_data["nargs"])+1):
+                if form_data["sort{0}".format(i)] not in pcf.sorts:
                     return
                 if not form_data["role{0}".format(i)]:
                     return
@@ -719,16 +679,16 @@ class Control(object):
             # assert(form["column2"] == form_data["column2"])
             # assert(form["role2"] == form_data["role2"])
 
-            if not (form_data["name"] and form_data["column1"] and form_data["column2"] and form_data["role1"] and form_data["role2"]):
+            if not (form_data["name"] and form_data["column1"] and form_data["column2"]
+                    and form_data["role1"] and form_data["role2"]):
                 return
-            if not (form_data["sort1"] in pcf.sorts() or form_data["sort2"] in pcf.sorts()):
+            if not (form_data["sort1"] in pcf.sorts and form_data["sort2"] in pcf.sorts):
                 return
 
             roles = [form_data["role1"], form_data["role2"]]
             colname1 = pcf.mvas[form_data["column1"]].name
             colname2 = pcf.mvas[form_data["column2"]].name
-            mva_id = pcf.add_foreign_key(form_data["name"], form_data["sort1"], colname1,
-                                             form_data["sort2"], colname2)
+            mva_id = pcf.add_foreign_key(form_data["name"], form_data["sort1"], colname1, form_data["sort2"], colname2)
             pcf.mvas[mva_id].roles = roles
 
             self.state["mva_form2_data"] = {
@@ -742,7 +702,7 @@ class Control(object):
             }
         Storage.write(pcf, self.state["pcf_name"])
 
-    def scale_mva(self,mva_id,scale_class):
+    def scale_mva(self, mva_id, scale_class):
         pcf = Storage.read(self.state["pcf_name"])
 
         scale = None
@@ -756,17 +716,12 @@ class Control(object):
         pcf.scale_mva(mva_id, scale)
         Storage.write(pcf, self.state["pcf_name"])
 
-    def delete_mva(self,mva_id):
+    def delete_mva(self, mva_id):
         pcf = Storage.read(self.state["pcf_name"])
         pcf.delete_mva(mva_id)
         Storage.write(pcf, self.state["pcf_name"])
 
-    def set_output_sql(self,sqlterm):
+    def set_output_sql(self, sqlterm):
         pcf = Storage.read(self.state["pcf_name"])
-        pcf.set_printsql(self.state["current_sort"],sqlterm)
+        pcf.set_printsql(self.state["current_sort"], sqlterm)
         Storage.write(pcf, self.state["pcf_name"])
-
-
-
-
-
