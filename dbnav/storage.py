@@ -4,11 +4,11 @@ from dbnav.serialization import dump, load
 
 class Storage(object):
 
-    available_scales = {
+    available_context_classes = {
         "int": [],
-        "varchar": ["PrefixScale"],
-        "date": ["DateIntervalScale"],
-        "bool": ["BooleanScale"],
+        "varchar": ["PrefixFacet"],
+        "date": ["DateIntervalFacet"],
+        "bool": ["BooleanFacet"],
     }
 
     @staticmethod

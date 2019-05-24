@@ -93,9 +93,7 @@ class Graph(object):
     def add_rnode(self, context_id, endpoints, pos=None):
 
         rcontext = self.pcf.rcontexts[context_id]
-        mva = rcontext.mva
-        rsort = mva.sort
-        scale = rcontext.scale
+        rsort = rcontext.sort
 
         assert(len(endpoints) == len(rsort))
 
@@ -107,7 +105,7 @@ class Graph(object):
 
         rnode_id = "e" + str(self._next_rid)
         self._next_rid += 1
-        self.rnodes[rnode_id] = RNode(context_id, rcontext.name, endpoints, scale.top())
+        self.rnodes[rnode_id] = RNode(context_id, rcontext.name, endpoints, rcontext.top())
         if pos is None:
             self.rnodes[rnode_id].point = Point(200, 200)
         else:
@@ -169,8 +167,8 @@ class Graph(object):
 
             else:
                 qnode = quotient.rnodes[hashtable[key]]
-                scale = self.pcf.rcontexts[key[0]].scale
-                qnode.label = scale.supremum(qnode.label, rnode.label)
+                rcontext = self.pcf.rcontexts[key[0]]
+                qnode.label = rcontext.supremum(qnode.label, rnode.label)
 
         self.nodes = quotient.nodes
         self.rnodes = quotient.rnodes

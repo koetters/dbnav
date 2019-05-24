@@ -2476,7 +2476,7 @@ setup = {
         } else {
             render_template(args["slot"],args["template"],args["data"]);
             $(".js_set_output_sql").on("change",handler("set_output_sql",[],"sqlterm"));
-            $(".js_scale_mva").on("change",handler("scale_mva",["mva_id"],"scale_class"));
+            $(".js_scale_mva").on("change",handler("scale_mva",["mva_id"],"context_class"));
             $(".js_delete_mva").on("click",handler("delete_mva",["mva_id"]));
             $(".js_select_mva_form2").on("click",handler("select_mva_form2",["form_id"]));
             $("#mvaForm1").on("click",".submit",form_handler("create_mva1","form_data"));

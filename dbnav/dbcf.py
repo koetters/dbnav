@@ -7,125 +7,6 @@ class SupremumUndefinedError(Exception):
     pass
 
 
-class Scale(object):
-
-    def pattern_sql(self, label):
-        raise NotImplementedError
-
-    def stats(self, values):
-        raise NotImplementedError
-
-    def top(self):
-        raise NotImplementedError
-
-    def supremum(self):
-        raise NotImplementedError
-
-    def get_class(self):
-        return type(self).__name__
-
-    def to_dict(self):
-        return {}
-
-    @classmethod
-    def from_dict(cls, obj):
-        return cls()
-
-
-class BooleanScale(Scale):
-
-    def pattern_sql(self, label):
-        assert str(label) == "1"  # boolean scale only allows label to be "1"
-        return "{0}=1"
-
-    def stats(self, values):
-        return {}
-
-    def top(self):
-        return "1"
-
-    def supremum(self):
-        pass
-
-
-class PrefixScale(Scale):
-
-    def pattern_sql(self, label):
-
-        assert isinstance(label, str)  # the label is supposed to be a string
-        if not label:  # empty string
-            return "{0} IS NOT NULL"
-        else:
-            return "{{0}} LIKE '{0}%'".format(label)
-
-    def stats(self, values):
-        freq = [(k, v) for k, v in Counter(values).items()]
-        freq.sort(key=lambda x: x[0])
-        return {"freq": freq, "count": len(values)}
-
-    def top(self):
-        return ""
-
-    def supremum(self):
-        pass
-
-
-class DateIntervalScale(Scale):
-
-    def __init__(self, mindate, maxdate, step):
-
-        self.mindate = mindate
-        self.step = step
-
-        if int((maxdate - mindate) % step) == 0:
-            self.nbins = int((maxdate - mindate) // step)
-            self.maxdate = maxdate
-        else:  # if step does not divide (maxdate-mindate), maxdate is increased to a step size
-            self.nbins = int((maxdate - mindate) // step) + 1
-            self.maxdate = mindate + self.nbins * step
-
-    def pattern_sql(self, label):
-        return "{{0}} BETWEEN '{0}-01-01' AND '{1}-12-31'".format(label[0], label[1])
-
-    def stats(self, values):
-
-        # histogram = [0] * self.nbins
-        # data_min = None
-        # data_max = None
-
-        # if values:
-        #     data_min = values[0].year
-        #     data_max = values[0].year
-        #     for d in values:
-        #         v = d.year
-        #         assert(self.mindate <= v <= self.maxdate)
-        #         histogram[int((v-self.mindate) // self.step)] += 1
-        #         data_min = min(data_min, v)
-        #         data_max = max(data_max, v)
-
-        return {"count": len(values), "scale_min": self.mindate, "scale_max": self.maxdate}
-
-    def top(self):
-        return [self.mindate, self.maxdate]
-
-    def _get_bounds(self):
-        return "SELECT MIN({0}) AS minimum, MAX({0}) AS maximum FROM {1}"
-
-    def supremum(self):
-        pass
-
-    def to_dict(self):
-        return {
-            "maxdate": self.maxdate,
-            "mindate": self.mindate,
-            "step": self.step,
-        }
-
-    @classmethod
-    def from_dict(cls, obj):
-        return cls(obj["mindate"], obj["maxdate"], obj["step"])
-
-
 class ManyValuedAttribute(object):
 
     def __init__(self, name, sort, datatype, sqldef, roles=None):
@@ -202,10 +83,9 @@ class ScaledContext(object):
     #  (as it is implemented now). And if the mva is not stored, then how can it be retrieved, should the
     #  context really know the context family? Or should the context family act as a proxy for ScaledContext
     #  (i.e. other code never talks to ScaledContext directly)? But that would flatten the API ...
-    def __init__(self, mva_id, mva, scale):
+    def __init__(self, mva_id, mva):
         self.mva_id = mva_id
         self.mva = mva
-        self.scale = scale
 
     @property
     def name(self):
@@ -223,22 +103,128 @@ class ScaledContext(object):
         return self.mva.sql(args)
 
     def pattern_sql(self, label, args):
-        return self.scale.pattern_sql(label).format(self.mva.sql(args))
+        raise NotImplementedError
 
-    # TODO relying on column [len(self.sort)] to contain the mva-values seems too error-prone
     def stats(self, table):
-        return self.scale.stats([row[len(self.sort)] for row in table.rows])
+        raise NotImplementedError
+
+    def top(self):
+        raise NotImplementedError
+
+    def supremum(self, pattern1, pattern2):
+        raise NotImplementedError
+
+    def get_class(self):
+        return type(self).__name__
 
     def to_dict(self):
         return {
             "mva_id": self.mva_id,
             "mva": self.mva,
-            "scale": self.scale,
         }
 
     @classmethod
     def from_dict(cls, obj):
-        return cls(obj["mva_id"], obj["mva"], obj["scale"])
+        return cls(obj["mva_id"], obj["mva"])
+
+
+class BooleanFacet(ScaledContext):
+
+    def cmd(self):
+        return "set_fk_label_view"
+
+    def template(self):
+        return "script#fk_label_template"
+
+    def pattern_sql(self, label, args):
+
+        assert str(label) == "1"  # boolean scale only allows label to be "1"
+        sqlterm = self.mva_sql(args)
+        return "{0}=1".format(sqlterm)
+
+    def stats(self, table):
+        return {}
+
+    def top(self):
+        return "1"
+
+    def supremum(self, pattern1, pattern2):
+        pass
+
+
+class PrefixFacet(ScaledContext):
+
+    def cmd(self):
+        return "set_prefix_label_view"
+
+    def template(self):
+        return "script#prefix_label_template"
+
+    def pattern_sql(self, label, args):
+
+        assert isinstance(label, str)  # the label is supposed to be a string
+        sqlterm = self.mva_sql(args)
+        if not label:  # empty string
+            return "{0} IS NOT NULL".format(sqlterm)
+        return "{0} LIKE '{1}%'".format(sqlterm, label)
+
+    def stats(self, table):
+        # TODO relying on column [len(self.sort)] to contain the mva-values seems too error-prone
+        values = [row[len(self.sort)] for row in table.rows]
+        freq = [(k, v) for k, v in Counter(values).items()]
+        freq.sort(key=lambda x: x[0])
+        return {"freq": freq, "count": len(values)}
+
+    def top(self):
+        return ""
+
+    def supremum(self, pattern1, pattern2):
+        pass
+
+
+class DateIntervalFacet(ScaledContext):
+
+    def cmd(self):
+        return "set_interval_label_view"
+
+    def template(self):
+        return "script#interval_label_template"
+
+    def pattern_sql(self, label, args):
+
+        sqlterm = self.mva_sql(args)
+        return "{0} BETWEEN '{1}-01-01' AND '{2}-12-31'".format(sqlterm, label[0], label[1])
+
+    def stats(self, table):
+        # TODO relying on column [len(self.sort)] to contain the mva-values seems too error-prone
+        values = [row[len(self.sort)] for row in table.rows]
+
+        # histogram = [0] * self.nbins
+        # data_min = None
+        # data_max = None
+
+        # if values:
+        #     data_min = values[0].year
+        #     data_max = values[0].year
+        #     for d in values:
+        #         v = d.year
+        #         assert(self.mindate <= v <= self.maxdate)
+        #         histogram[int((v-self.mindate) // self.step)] += 1
+        #         data_min = min(data_min, v)
+        #         data_max = max(data_max, v)
+
+        return {"count": len(values), "scale_min": 1800, "scale_max": 2000}
+
+    def top(self):
+        return [1800, 2000]
+        # TODO get bounds from database (fix also in stats)
+        # args = ["x{0}".format(i+1) for i in range(len(self.sort))]
+        # sql_term = self.mva_sql(args)
+        # from_clause = ", ".join(["{0} AS {1}".format(s,x) for s,x in zip(self.sort, args)])
+        # query = "SELECT MIN({0}) AS mindate, MAX({0}) AS maxdate FROM {1}".format(sql_term, from_clause)
+
+    def supremum(self, pattern1, pattern2):
+        pass
 
 
 class DBContextFamily(object):
@@ -308,8 +294,17 @@ class DBContextFamily(object):
     def set_printsql(self, sort, sqldef):
         self.output[sort] = sqldef
 
-    def scale_mva(self, mva_id, scale):
-        self.rcontexts[mva_id] = ScaledContext(mva_id, self.mvas[mva_id], scale)
+    def scale_mva(self, mva_id, scaled_context_class):
+
+        scaled_context = None
+        if scaled_context_class == "BooleanFacet":
+            scaled_context = BooleanFacet(mva_id, self.mvas[mva_id])
+        elif scaled_context_class == "DateIntervalFacet":
+            scaled_context = DateIntervalFacet(mva_id, self.mvas[mva_id])
+        if scaled_context_class == "PrefixFacet":
+            scaled_context = PrefixFacet(mva_id, self.mvas[mva_id])
+
+        self.rcontexts[mva_id] = scaled_context
 
     def print_sql(self, sort, node_id):
         return self.output[sort].format(node_id)

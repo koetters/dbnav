@@ -1,6 +1,6 @@
 from dbnav.storage import Storage
 from dbnav.graph import Graph, Point
-from dbnav.dbcf import DBContextFamily, BooleanScale, DateIntervalScale, PrefixScale
+from dbnav.dbcf import DBContextFamily
 import mysql.connector
 
 
@@ -98,14 +98,14 @@ class Control(object):
                 }
             })
 
-            if self.state["current_link_type"] is None:
+            if self.state["current_link"]["linkID"] is None:
 
                 views.append({
                     "cmd": "set_sort_label_view",
                     "args": {
                         "slot": "labelView",
                         "template": "script#sort_label_template",
-                        "data": self.sort_label_view_data(self.state["graph"], self.state["current_node"]),
+                        "data": self.state["graph"].stats(self.state["current_node"]),
                     }
                 })
 
@@ -113,42 +113,17 @@ class Control(object):
 
                 rnode_id = self.state["current_link"]["linkID"]
                 rnode = self.state["graph"].rnodes[rnode_id]
-                #  TODO: while len(endpoints) is indeed the index of the table's mva column,\
-                #        a more explicit treatment would be less error-prone
-                data = self.label_view_data(self.state["graph"], rnode_id)
+                rcontext = self.state["graph"].pcf.rcontexts[rnode.context_id]
 
-                if self.state["current_link_type"] == "DateIntervalScale":
-                    views.append({
-                        "cmd": "set_interval_label_view",
-                        "args": {
-                            "slot": "labelView",
-                            "template": "script#interval_label_template",
-                            "data": data,
-                            "label": rnode.label,
-                        }
-                    })
-
-                elif self.state["current_link_type"] == "PrefixScale":
-                    views.append({
-                        "cmd": "set_prefix_label_view",
-                        "args": {
-                            "slot": "labelView",
-                            "template": "script#prefix_label_template",
-                            "data": data,
-                            "label": rnode.label,
-                        }
-                    })
-
-                elif self.state["current_link_type"] == "BooleanScale":
-                    views.append({
-                        "cmd": "set_fk_label_view",
-                        "args": {
-                            "slot": "labelView",
-                            "template": "script#fk_label_template",
-                            "data": data,
-                            "label": rnode.label,
-                        }
-                    })
+                views.append({
+                    "cmd": rcontext.cmd(),
+                    "args": {
+                        "slot": "labelView",
+                        "template": rcontext.template(),
+                        "data": self.state["graph"].rstats(rnode_id),
+                        "label": rnode.label,
+                    }
+                })
 
         elif self.state["main"] == "edit":
 
@@ -289,12 +264,6 @@ class Control(object):
 
         return {"propertyLinks": property_links, "relationLinks": relation_links}
 
-    def sort_label_view_data(self, graph, node_id):
-        return graph.stats(node_id)
-
-    def label_view_data(self, graph, rnode_id):
-        return graph.rstats(rnode_id)
-
     def table_view_data(self, graph, node_id, rnode_id):
 
         if rnode_id is None:
@@ -331,12 +300,12 @@ class Control(object):
 
             assert(len(rcontexts) <= 1)
             if not rcontexts:
-                current_scale = ""
+                current_cls = ""
             else:
                 rcontext = next(iter(rcontexts.values()))
-                current_scale = rcontext.scale.get_class()
+                current_cls = rcontext.get_class()
 
-            scales_list = [""] + Storage.available_scales.get(mva.datatype, [])
+            context_classes = [""] + Storage.available_context_classes.get(mva.datatype, [])
 
             mva_info = {
                 "id": mva_id,
@@ -345,7 +314,7 @@ class Control(object):
                 "datatype": mva.datatype,
                 "sqldef": mva.sqldef,
                 "params": [{"sort": mva.sort[i], "role": mva.roles[i]} for i in range(len(mva.sort))],
-                "scales": [{"class": s, "selected": current_scale is s} for s in scales_list],
+                "scales": [{"class": cls, "selected": current_cls is cls} for cls in context_classes],
             }
 
             if len(mva.sort) == 1:
@@ -419,7 +388,7 @@ class Control(object):
         x1 = graph.add_node(None, Point(305, 150))
 
         self.state = {"main": "navigate", "pcf_name": pcf_name, "graph": graph, "current_node": x1,
-                      "current_link": {"linkID": None, "roleID": None}, "current_link_type": None}
+                      "current_link": {"linkID": None, "roleID": None}}
 
     def insert_edit_view(self, pcf_name):
         self.state = {"main": "edit", "pcf_name": pcf_name, "current_sort": None, "mva_form1": None,
@@ -450,24 +419,16 @@ class Control(object):
     def select_edge(self, edge_id, role_id):
         if edge_id is None:
             self.state["current_link"] = {"linkID": None, "roleID": None}
-            self.state["current_link_type"] = None
         else:
-            rnode = self.state["graph"].rnodes[edge_id]
-            rcontext = self.state["graph"].pcf.rcontexts[rnode.context_id]
-            scale = rcontext.scale
-
             self.state["current_link"] = {"linkID": edge_id, "roleID": role_id}
-            self.state["current_link_type"] = scale.get_class()
 
     def remove_edge(self, edge_id, role_id):
         self.state["graph"].remove_rnode(edge_id, role_id)
         self.state["current_link"] = {"linkID": None, "roleID": None}
-        self.state["current_link_type"] = None
 
     def select_node(self, node_id):
         self.state["current_node"] = node_id
         self.state["current_link"] = {"linkID": None, "roleID": None}
-        self.state["current_link_type"] = None
 
     def toggle_display(self, context_id):
         node = self.state["graph"].nodes[self.state["current_node"]]
@@ -702,18 +663,9 @@ class Control(object):
             }
         Storage.write(pcf, self.state["pcf_name"])
 
-    def scale_mva(self, mva_id, scale_class):
+    def scale_mva(self, mva_id, context_class):
         pcf = Storage.read(self.state["pcf_name"])
-
-        scale = None
-        if scale_class == "BooleanScale":
-            scale = BooleanScale()
-        elif scale_class == "DateIntervalScale":
-            scale = DateIntervalScale(1800, 2000, 10)
-        if scale_class == "PrefixScale":
-            scale = PrefixScale()
-
-        pcf.scale_mva(mva_id, scale)
+        pcf.scale_mva(mva_id, context_class)
         Storage.write(pcf, self.state["pcf_name"])
 
     def delete_mva(self, mva_id):

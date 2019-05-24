@@ -136,7 +136,7 @@
     "password": "dbnav",
     "rcontexts": {
         "m4": {
-            "_cls": "ScaledContext",
+            "_cls": "PrefixFacet",
             "_mod": "dbnav.dbcf",
             "mva": {
                 "_cls": "DBColumn",
@@ -151,14 +151,10 @@
                 ],
                 "sqldef": "{0}.nationality"
             },
-            "mva_id": "m4",
-            "scale": {
-                "_cls": "PrefixScale",
-                "_mod": "dbnav.dbcf"
-            }
+            "mva_id": "m4"
         },
         "m5": {
-            "_cls": "ScaledContext",
+            "_cls": "DateIntervalFacet",
             "_mod": "dbnav.dbcf",
             "mva": {
                 "_cls": "DBColumn",
@@ -173,17 +169,10 @@
                 ],
                 "sqldef": "{0}.date_of_birth"
             },
-            "mva_id": "m5",
-            "scale": {
-                "_cls": "DateIntervalScale",
-                "_mod": "dbnav.dbcf",
-                "maxdate": 2000,
-                "mindate": 1800,
-                "step": 10
-            }
+            "mva_id": "m5"
         },
         "m8": {
-            "_cls": "ScaledContext",
+            "_cls": "DateIntervalFacet",
             "_mod": "dbnav.dbcf",
             "mva": {
                 "_cls": "DBColumn",
@@ -198,17 +187,10 @@
                 ],
                 "sqldef": "{0}.publication_date"
             },
-            "mva_id": "m8",
-            "scale": {
-                "_cls": "DateIntervalScale",
-                "_mod": "dbnav.dbcf",
-                "maxdate": 2000,
-                "mindate": 1800,
-                "step": 10
-            }
+            "mva_id": "m8"
         },
         "m9": {
-            "_cls": "ScaledContext",
+            "_cls": "BooleanFacet",
             "_mod": "dbnav.dbcf",
             "mva": {
                 "_cls": "ForeignKey",
@@ -229,11 +211,7 @@
                 ],
                 "sqldef": "IF({0}.author={1}.id,1,0)"
             },
-            "mva_id": "m9",
-            "scale": {
-                "_cls": "BooleanScale",
-                "_mod": "dbnav.dbcf"
-            }
+            "mva_id": "m9"
         }
     },
     "user": "dbnav"
