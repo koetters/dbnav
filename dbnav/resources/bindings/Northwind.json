@@ -1,0 +1,1175 @@
+{
+    "_cls": "DBContextFamily",
+    "_mod": "dbnav.dbcf",
+    "_next_id": 89,
+    "db_info": {
+        "_cls": "DatabaseInfo",
+        "_mod": "dbnav.dbcf",
+        "database": "Northwind",
+        "host": "localhost",
+        "password": "dbnav",
+        "user": "dbnav"
+    },
+    "mvas": {
+        "m1": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "int",
+            "name": "CategoryID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Categories"
+            ],
+            "sqldef": "{0}.CategoryID"
+        },
+        "m10": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "CompanyName",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Customers"
+            ],
+            "sqldef": "{0}.CompanyName"
+        },
+        "m11": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "ContactName",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Customers"
+            ],
+            "sqldef": "{0}.ContactName"
+        },
+        "m12": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "ContactTitle",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Customers"
+            ],
+            "sqldef": "{0}.ContactTitle"
+        },
+        "m13": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "Address",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Customers"
+            ],
+            "sqldef": "{0}.Address"
+        },
+        "m14": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "City",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Customers"
+            ],
+            "sqldef": "{0}.City"
+        },
+        "m15": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "Region",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Customers"
+            ],
+            "sqldef": "{0}.Region"
+        },
+        "m16": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "PostalCode",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Customers"
+            ],
+            "sqldef": "{0}.PostalCode"
+        },
+        "m17": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "Country",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Customers"
+            ],
+            "sqldef": "{0}.Country"
+        },
+        "m18": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "Phone",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Customers"
+            ],
+            "sqldef": "{0}.Phone"
+        },
+        "m19": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "Fax",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Customers"
+            ],
+            "sqldef": "{0}.Fax"
+        },
+        "m2": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "CategoryName",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Categories"
+            ],
+            "sqldef": "{0}.CategoryName"
+        },
+        "m20": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "int",
+            "name": "EmployeeID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "EmployeeTerritories"
+            ],
+            "sqldef": "{0}.EmployeeID"
+        },
+        "m21": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "TerritoryID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "EmployeeTerritories"
+            ],
+            "sqldef": "{0}.TerritoryID"
+        },
+        "m22": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "int",
+            "name": "EmployeeID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.EmployeeID"
+        },
+        "m23": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "LastName",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.LastName"
+        },
+        "m24": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "FirstName",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.FirstName"
+        },
+        "m25": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "Title",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.Title"
+        },
+        "m26": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "TitleOfCourtesy",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.TitleOfCourtesy"
+        },
+        "m27": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "datetime",
+            "name": "BirthDate",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.BirthDate"
+        },
+        "m28": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "datetime",
+            "name": "HireDate",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.HireDate"
+        },
+        "m29": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "Address",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.Address"
+        },
+        "m3": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "longtext",
+            "name": "Description",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Categories"
+            ],
+            "sqldef": "{0}.Description"
+        },
+        "m30": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "City",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.City"
+        },
+        "m31": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "Region",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.Region"
+        },
+        "m32": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "PostalCode",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.PostalCode"
+        },
+        "m33": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "Country",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.Country"
+        },
+        "m34": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "HomePhone",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.HomePhone"
+        },
+        "m35": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "Extension",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.Extension"
+        },
+        "m36": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "longblob",
+            "name": "Photo",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.Photo"
+        },
+        "m37": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "longtext",
+            "name": "Notes",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.Notes"
+        },
+        "m38": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "int",
+            "name": "ReportsTo",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.ReportsTo"
+        },
+        "m39": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "PhotoPath",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Employees"
+            ],
+            "sqldef": "{0}.PhotoPath"
+        },
+        "m4": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "longblob",
+            "name": "Picture",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Categories"
+            ],
+            "sqldef": "{0}.Picture"
+        },
+        "m40": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "int",
+            "name": "OrderID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "OrderDetails"
+            ],
+            "sqldef": "{0}.OrderID"
+        },
+        "m41": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "int",
+            "name": "ProductID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "OrderDetails"
+            ],
+            "sqldef": "{0}.ProductID"
+        },
+        "m42": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "decimal",
+            "name": "UnitPrice",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "OrderDetails"
+            ],
+            "sqldef": "{0}.UnitPrice"
+        },
+        "m43": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "smallint",
+            "name": "Quantity",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "OrderDetails"
+            ],
+            "sqldef": "{0}.Quantity"
+        },
+        "m44": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "double",
+            "name": "Discount",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "OrderDetails"
+            ],
+            "sqldef": "{0}.Discount"
+        },
+        "m45": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "int",
+            "name": "OrderID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Orders"
+            ],
+            "sqldef": "{0}.OrderID"
+        },
+        "m46": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "char",
+            "name": "CustomerID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Orders"
+            ],
+            "sqldef": "{0}.CustomerID"
+        },
+        "m47": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "int",
+            "name": "EmployeeID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Orders"
+            ],
+            "sqldef": "{0}.EmployeeID"
+        },
+        "m48": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "datetime",
+            "name": "OrderDate",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Orders"
+            ],
+            "sqldef": "{0}.OrderDate"
+        },
+        "m49": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "datetime",
+            "name": "RequiredDate",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Orders"
+            ],
+            "sqldef": "{0}.RequiredDate"
+        },
+        "m5": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "char",
+            "name": "CustomerID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "CustomerCustomerDemo"
+            ],
+            "sqldef": "{0}.CustomerID"
+        },
+        "m50": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "datetime",
+            "name": "ShippedDate",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Orders"
+            ],
+            "sqldef": "{0}.ShippedDate"
+        },
+        "m51": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "int",
+            "name": "ShipVia",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Orders"
+            ],
+            "sqldef": "{0}.ShipVia"
+        },
+        "m52": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "decimal",
+            "name": "Freight",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Orders"
+            ],
+            "sqldef": "{0}.Freight"
+        },
+        "m53": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "ShipName",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Orders"
+            ],
+            "sqldef": "{0}.ShipName"
+        },
+        "m54": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "ShipAddress",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Orders"
+            ],
+            "sqldef": "{0}.ShipAddress"
+        },
+        "m55": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "ShipCity",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Orders"
+            ],
+            "sqldef": "{0}.ShipCity"
+        },
+        "m56": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "ShipRegion",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Orders"
+            ],
+            "sqldef": "{0}.ShipRegion"
+        },
+        "m57": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "ShipPostalCode",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Orders"
+            ],
+            "sqldef": "{0}.ShipPostalCode"
+        },
+        "m58": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "ShipCountry",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Orders"
+            ],
+            "sqldef": "{0}.ShipCountry"
+        },
+        "m59": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "int",
+            "name": "ProductID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Products"
+            ],
+            "sqldef": "{0}.ProductID"
+        },
+        "m6": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "char",
+            "name": "CustomerTypeID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "CustomerCustomerDemo"
+            ],
+            "sqldef": "{0}.CustomerTypeID"
+        },
+        "m60": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "ProductName",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Products"
+            ],
+            "sqldef": "{0}.ProductName"
+        },
+        "m61": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "int",
+            "name": "SupplierID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Products"
+            ],
+            "sqldef": "{0}.SupplierID"
+        },
+        "m62": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "int",
+            "name": "CategoryID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Products"
+            ],
+            "sqldef": "{0}.CategoryID"
+        },
+        "m63": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "QuantityPerUnit",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Products"
+            ],
+            "sqldef": "{0}.QuantityPerUnit"
+        },
+        "m64": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "decimal",
+            "name": "UnitPrice",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Products"
+            ],
+            "sqldef": "{0}.UnitPrice"
+        },
+        "m65": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "smallint",
+            "name": "UnitsInStock",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Products"
+            ],
+            "sqldef": "{0}.UnitsInStock"
+        },
+        "m66": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "smallint",
+            "name": "UnitsOnOrder",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Products"
+            ],
+            "sqldef": "{0}.UnitsOnOrder"
+        },
+        "m67": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "smallint",
+            "name": "ReorderLevel",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Products"
+            ],
+            "sqldef": "{0}.ReorderLevel"
+        },
+        "m68": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "tinyint",
+            "name": "Discontinued",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Products"
+            ],
+            "sqldef": "{0}.Discontinued"
+        },
+        "m69": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "int",
+            "name": "RegionID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Region"
+            ],
+            "sqldef": "{0}.RegionID"
+        },
+        "m7": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "char",
+            "name": "CustomerTypeID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "CustomerDemographics"
+            ],
+            "sqldef": "{0}.CustomerTypeID"
+        },
+        "m70": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "char",
+            "name": "RegionDescription",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Region"
+            ],
+            "sqldef": "{0}.RegionDescription"
+        },
+        "m71": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "int",
+            "name": "ShipperID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Shippers"
+            ],
+            "sqldef": "{0}.ShipperID"
+        },
+        "m72": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "CompanyName",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Shippers"
+            ],
+            "sqldef": "{0}.CompanyName"
+        },
+        "m73": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "Phone",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Shippers"
+            ],
+            "sqldef": "{0}.Phone"
+        },
+        "m74": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "int",
+            "name": "SupplierID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Suppliers"
+            ],
+            "sqldef": "{0}.SupplierID"
+        },
+        "m75": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "CompanyName",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Suppliers"
+            ],
+            "sqldef": "{0}.CompanyName"
+        },
+        "m76": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "ContactName",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Suppliers"
+            ],
+            "sqldef": "{0}.ContactName"
+        },
+        "m77": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "ContactTitle",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Suppliers"
+            ],
+            "sqldef": "{0}.ContactTitle"
+        },
+        "m78": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "Address",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Suppliers"
+            ],
+            "sqldef": "{0}.Address"
+        },
+        "m79": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "City",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Suppliers"
+            ],
+            "sqldef": "{0}.City"
+        },
+        "m8": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "longtext",
+            "name": "CustomerDesc",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "CustomerDemographics"
+            ],
+            "sqldef": "{0}.CustomerDesc"
+        },
+        "m80": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "Region",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Suppliers"
+            ],
+            "sqldef": "{0}.Region"
+        },
+        "m81": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "PostalCode",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Suppliers"
+            ],
+            "sqldef": "{0}.PostalCode"
+        },
+        "m82": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "Country",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Suppliers"
+            ],
+            "sqldef": "{0}.Country"
+        },
+        "m83": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "Phone",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Suppliers"
+            ],
+            "sqldef": "{0}.Phone"
+        },
+        "m84": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "Fax",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Suppliers"
+            ],
+            "sqldef": "{0}.Fax"
+        },
+        "m85": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "longtext",
+            "name": "HomePage",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Suppliers"
+            ],
+            "sqldef": "{0}.HomePage"
+        },
+        "m86": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "varchar",
+            "name": "TerritoryID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Territories"
+            ],
+            "sqldef": "{0}.TerritoryID"
+        },
+        "m87": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "char",
+            "name": "TerritoryDescription",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Territories"
+            ],
+            "sqldef": "{0}.TerritoryDescription"
+        },
+        "m88": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "int",
+            "name": "RegionID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Territories"
+            ],
+            "sqldef": "{0}.RegionID"
+        },
+        "m9": {
+            "_cls": "DBColumn",
+            "_mod": "dbnav.dbcf",
+            "datatype": "char",
+            "name": "CustomerID",
+            "roles": [
+                "ATTR"
+            ],
+            "sort": [
+                "Customers"
+            ],
+            "sqldef": "{0}.CustomerID"
+        }
+    },
+    "output": {
+        "Categories": "{0}.CategoryID",
+        "CustomerCustomerDemo": "CONCAT({0}.CustomerID,', ',{0}.CustomerTypeID)",
+        "CustomerDemographics": "{0}.CustomerTypeID",
+        "Customers": "{0}.CustomerID",
+        "EmployeeTerritories": "CONCAT({0}.EmployeeID,', ',{0}.TerritoryID)",
+        "Employees": "{0}.EmployeeID",
+        "OrderDetails": "CONCAT({0}.OrderID,', ',{0}.ProductID)",
+        "Orders": "{0}.OrderID",
+        "Products": "{0}.ProductID",
+        "Region": "{0}.RegionID",
+        "Shippers": "{0}.ShipperID",
+        "Suppliers": "{0}.SupplierID",
+        "Territories": "{0}.TerritoryID"
+    },
+    "rcontexts": {}
+}

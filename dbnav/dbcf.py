@@ -523,8 +523,8 @@ class DBContextFamily(object):
 
         cnx.close()
 
-        sorts = set(row[1] for row in rows1)
-        self.output = {s: None for s in sorts}
+        # sorts = set(row[1] for row in rows1)
+        # self.output = {s: None for s in sorts}
 
         for column, sort, datatype in rows1:
             self.add_column(column, sort, datatype)
@@ -532,10 +532,17 @@ class DBContextFamily(object):
         for keyname, keytype, sort1, column1, sort2, column2 in rows2:
             assert keytype in ["PRIMARY KEY", "FOREIGN KEY"]
             if keytype == "PRIMARY KEY":
-                assert self.output[sort1] is None
-                self.set_printsql(sort1, "{{0}}.{0}".format(column1))
+                self.output.setdefault(sort1,[]).append(column1)
             else:
                 self.add_foreign_key(keyname, sort1, column1, sort2, column2)
+
+        for sort in self.output:
+            primary_keys = self.output[sort]
+            if len(primary_keys) == 1:
+                self.output[sort] = "{{0}}.{0}".format(primary_keys[0])
+            else:
+                pk_list = ",', ',".join(["{{0}}.{0}".format(column) for column in primary_keys])
+                self.output[sort] = "CONCAT({0})".format(pk_list)
 
     def to_dict(self):
         return {
