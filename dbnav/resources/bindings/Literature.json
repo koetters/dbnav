@@ -2,8 +2,14 @@
     "_cls": "DBContextFamily",
     "_mod": "dbnav.dbcf",
     "_next_id": 10,
-    "database": "Literature",
-    "host": "localhost",
+    "db_info": {
+        "_cls": "DatabaseInfo",
+        "_mod": "dbnav.dbcf",
+        "database": "Literature",
+        "host": "localhost",
+        "password": "dbnav",
+        "user": "dbnav"
+    },
     "mvas": {
         "m1": {
             "_cls": "DBColumn",
@@ -133,11 +139,18 @@
         "Author": "CONCAT({0}.last_name,', ',{0}.first_name)",
         "Book": "{0}.title"
     },
-    "password": "dbnav",
     "rcontexts": {
         "m4": {
             "_cls": "PrefixFacet",
             "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Literature",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
             "mva": {
                 "_cls": "DBColumn",
                 "_mod": "dbnav.dbcf",
@@ -156,6 +169,14 @@
         "m5": {
             "_cls": "DateIntervalFacet",
             "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Literature",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
             "mva": {
                 "_cls": "DBColumn",
                 "_mod": "dbnav.dbcf",
@@ -174,6 +195,14 @@
         "m8": {
             "_cls": "DateIntervalFacet",
             "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Literature",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
             "mva": {
                 "_cls": "DBColumn",
                 "_mod": "dbnav.dbcf",
@@ -192,6 +221,14 @@
         "m9": {
             "_cls": "BooleanFacet",
             "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Literature",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
             "mva": {
                 "_cls": "ForeignKey",
                 "_mod": "dbnav.dbcf",
@@ -213,6 +250,5 @@
             },
             "mva_id": "m9"
         }
-    },
-    "user": "dbnav"
+    }
 }

@@ -1,7 +1,6 @@
 from dbnav.storage import Storage
 from dbnav.graph import Graph, Point
 from dbnav.dbcf import DBContextFamily
-import mysql.connector
 
 
 mysql_main_types = ["bool", "date", "int", "varchar"]
@@ -121,7 +120,6 @@ class Control(object):
                         "slot": "labelView",
                         "template": rcontext.template(),
                         "data": self.state["graph"].rstats(rnode_id),
-                        "label": rnode.label,
                     }
                 })
 
@@ -439,43 +437,8 @@ class Control(object):
 
     def create_binding(self, form):
 
-        cnx = mysql.connector.connect(user=form["user"], password=form["password"],
-                                      host=form["host"], database=form["database"])
-
-        cursor1 = cnx.cursor()
-        query1 = "SELECT column_name,table_name,data_type FROM information_schema.columns WHERE table_schema='{0}'"
-        cursor1.execute(query1.format(form["database"]))
-        rows1 = cursor1.fetchall()
-        cursor1.close()
-
-        cursor2 = cnx.cursor()
-        query2 = ("SELECT t1.constraint_name, t2.constraint_type, t1.table_name, t1.column_name, "
-                  + "t1.referenced_table_name, t1.referenced_column_name "
-                  + "FROM information_schema.key_column_usage AS t1 "
-                  + "LEFT JOIN information_schema.table_constraints AS t2 "
-                  + "ON t1.constraint_name = t2.constraint_name AND t1.table_schema = t2.table_schema "
-                  + "AND t1.table_name = t2.table_name "
-                  + "WHERE t1.table_schema = '{0}'")
-        cursor2.execute(query2.format(form["database"]))
-        rows2 = cursor2.fetchall()
-        cursor2.close()
-
-        cnx.close()
-
-        sorts = set(row[1] for row in rows1)
-        pcf = DBContextFamily({s: None for s in sorts}, form["user"], form["password"], form["host"], form["database"])
-
-        for column, sort, datatype in rows1:
-            pcf.add_column(column, sort, datatype)
-
-        for keyname, keytype, sort1, column1, sort2, column2 in rows2:
-            assert keytype in ["PRIMARY KEY", "FOREIGN KEY"]
-            if keytype == "PRIMARY KEY":
-                assert pcf.output[sort1] is None
-                pcf.set_printsql(sort1, "{{0}}.{0}".format(column1))
-            else:
-                pcf.add_foreign_key(keyname, sort1, column1, sort2, column2)
-
+        pcf = DBContextFamily(form["user"], form["password"], form["host"], form["database"])
+        pcf.load_contents()
         Storage.write(pcf, form["name"] if form["name"] else form["database"])
 
     def select_sort(self, sort):

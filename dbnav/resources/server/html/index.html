@@ -2374,6 +2374,13 @@ class Graph {
             graph.nodes[nodeID].point = new Point(node["point"]["x"],node["point"]["y"])
         }
         for(let [rnodeID,rnode] of Object.entries(obj["rnodes"])) {
+            // this is a dirty fix - save for replicating server-side JSON encoding/decoding (too much effort),
+            // the best solution is getting this as string template data. This means that the "Graph" model class
+            // can't be used here; the drag & drop has to be rewritten by manipulating the svg directly -
+            // but there was some problem with the browser not showing updates (?)
+            if(Array.isArray(rnode["label"])) {
+                rnode["label"] = [new Date(rnode["label"][0]._val).getYear()+1900, new Date(rnode["label"][1]._val).getYear()+1900]
+            }
             graph.rnodes[rnodeID] = new RNode(rnode["context_id"],rnode["context_name"],rnode["endpoints"],rnode["label"]);
             graph.rnodes[rnodeID].point = new Point(rnode["point"]["x"],rnode["point"]["y"])
         }
@@ -2439,7 +2446,7 @@ setup = {
             range: true,
             min: args["data"]["scale_min"],
             max: args["data"]["scale_max"],
-            values: [args["label"][0],args["label"][1]],
+            values: [args["data"]["label_min"],args["data"]["label_max"]],
             slide: function(event,ui) {
                 $("#interval-min").val($("#slider-range").slider("values",0));
                 $("#interval-max").val($("#slider-range").slider("values",1));
@@ -2447,7 +2454,7 @@ setup = {
             stop: function(event,ui) {
                 var new_lower = $("#slider-range").slider("values",0);
                 var new_upper = $("#slider-range").slider("values",1);
-                send_ajax("set_label",{ "label": [new_lower,new_upper] });
+                send_ajax("set_label",{ "label": JSON.stringify([new_lower,new_upper]) });
             }
         });
         $("#interval-min").val($("#slider-range").slider("values",0));
@@ -2458,7 +2465,7 @@ setup = {
         render_template(args["slot"],args["template"],args["data"]);
         $(".js_set_label_on_keyup").on("keyup",handler("set_label",[],"label"));
         $(".js_set_label").on("click",handler("set_label",["label"]));
-        $("#prefix_input").val(args["label"]).focus();
+        $("#prefix_input").val(args["data"]["label"]).focus();
     },
 
     "set_fk_label_view": function(args) {

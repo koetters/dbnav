@@ -214,7 +214,8 @@ class Graph(object):
     def rstats(self, rnode_id):
 
         table = self.rextent(rnode_id)
-        return self.get_context(rnode_id).stats(table)
+        label = self.rnodes[rnode_id].label
+        return self.get_context(rnode_id).stats(table, label)
 
     def extent(self, node_id):
         # passing "self" undoubtedly looks strange; it is a consequence of pcf being an attribute of graph;
