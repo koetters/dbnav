@@ -396,6 +396,8 @@ class Control(object):
         if self.state["current_link"]["linkID"] is None:  # object node
             node = self.state["graph"].nodes[self.state["current_node"]]
             node.sort = label
+            # TODO forgetting all display attributes when changing sorts - simple, but is it intuitive (for user)?
+            node.display = set()
         else:
             rnode = self.state["graph"].rnodes[self.state["current_link"]["linkID"]]
             rnode.label = label
