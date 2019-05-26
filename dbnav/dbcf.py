@@ -506,6 +506,7 @@ class DBContextFamily(object):
         cursor1 = cnx.cursor()
         query1 = "SELECT column_name,table_name,data_type FROM information_schema.columns WHERE table_schema='{0}'"
         cursor1.execute(query1.format(self.db_info.database))
+        header1 = [t[0] for t in cursor1.description]
         rows1 = cursor1.fetchall()
         cursor1.close()
 
@@ -523,8 +524,15 @@ class DBContextFamily(object):
 
         cnx.close()
 
-        # sorts = set(row[1] for row in rows1)
-        # self.output = {s: None for s in sorts}
+        columns = {}
+        assert(header1[0] == "column_name" and header1[1] == "table_name" and header1[2] == "data_type")
+
+        for row in rows1:
+            column = row[0]
+            sort = row[1]
+            columns.setdefault(sort,[]).append(column)
+
+        self.output = {s: [] for s in columns.keys()}
 
         for column, sort, datatype in rows1:
             self.add_column(column, sort, datatype)
@@ -538,7 +546,10 @@ class DBContextFamily(object):
 
         for sort in self.output:
             primary_keys = self.output[sort]
-            if len(primary_keys) == 1:
+            if len(primary_keys) == 0:
+                pk_list = ",', ',".join(["{{0}}.{0}".format(column) for column in columns[sort]])
+                self.output[sort] = "CONCAT({0})".format(pk_list)
+            elif len(primary_keys) == 1:
                 self.output[sort] = "{{0}}.{0}".format(primary_keys[0])
             else:
                 pk_list = ",', ',".join(["{{0}}.{0}".format(column) for column in primary_keys])
