@@ -338,15 +338,17 @@ class DBContextFamily(object):
 
     def scale_mva(self, mva_id, scaled_context_class):
 
-        scaled_context = None
-        if scaled_context_class == "BooleanFacet":
-            scaled_context = BooleanFacet(mva_id, self.mvas[mva_id], self.db_info)
-        elif scaled_context_class == "DateIntervalFacet":
-            scaled_context = DateIntervalFacet(mva_id, self.mvas[mva_id], self.db_info)
-        if scaled_context_class == "PrefixFacet":
-            scaled_context = PrefixFacet(mva_id, self.mvas[mva_id], self.db_info)
+        if scaled_context_class is None or scaled_context_class == "":
+            self.rcontexts.pop(mva_id, None)
+        else:
+            if scaled_context_class == "BooleanFacet":
+                scaled_context = BooleanFacet(mva_id, self.mvas[mva_id], self.db_info)
+            elif scaled_context_class == "DateIntervalFacet":
+                scaled_context = DateIntervalFacet(mva_id, self.mvas[mva_id], self.db_info)
+            elif scaled_context_class == "PrefixFacet":
+                scaled_context = PrefixFacet(mva_id, self.mvas[mva_id], self.db_info)
 
-        self.rcontexts[mva_id] = scaled_context
+            self.rcontexts[mva_id] = scaled_context
 
     def print_sql(self, sort, node_id):
         return self.output[sort].format(node_id)
