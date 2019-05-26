@@ -329,9 +329,11 @@ class DBContextFamily(object):
         self.mvas[mva_id] = ManyValuedAttribute(name, sort, datatype, sqldef, roles)
         return mva_id
 
-    # TODO: What happens if the deleted mva is being used by an rcontext?
     def delete_mva(self, name):
         self.mvas = {mva_id: mva for mva_id, mva in self.mvas.items() if mva_id != name}
+        # TODO if the deleted mva is used by an rcontext, the rcontext is also deleted (should it be
+        #  be forbidden to delete mva's while used by a context instead ?)
+        self.rcontexts = {rc_id: rc for rc_id, rc in self.rcontexts.items() if rc.mva_id != name}
 
     def set_printsql(self, sort, sqldef):
         self.output[sort] = sqldef
