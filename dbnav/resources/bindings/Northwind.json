@@ -1,7 +1,7 @@
 {
     "_cls": "DBContextFamily",
     "_mod": "dbnav.dbcf",
-    "_next_id": 89,
+    "_next_id": 111,
     "db_info": {
         "_cls": "DatabaseInfo",
         "_mod": "dbnav.dbcf",
@@ -36,6 +36,177 @@
                 "Customers"
             ],
             "sqldef": "{0}.CompanyName"
+        },
+        "m101": {
+            "_cls": "ForeignKey",
+            "_mod": "dbnav.dbcf",
+            "columns": [
+                "EmployeeID",
+                "EmployeeID"
+            ],
+            "datatype": "bool",
+            "name": "has_employee",
+            "roles": [
+                "SUBJ",
+                "OBJ"
+            ],
+            "sort": [
+                "EmployeeTerritories",
+                "Employees"
+            ],
+            "sqldef": "IF({0}.EmployeeID={1}.EmployeeID,1,0)"
+        },
+        "m102": {
+            "_cls": "ForeignKey",
+            "_mod": "dbnav.dbcf",
+            "columns": [
+                "TerritoryID",
+                "TerritoryID"
+            ],
+            "datatype": "bool",
+            "name": "has_territory",
+            "roles": [
+                "SUBJ",
+                "OBJ"
+            ],
+            "sort": [
+                "EmployeeTerritories",
+                "Territories"
+            ],
+            "sqldef": "IF({0}.TerritoryID={1}.TerritoryID,1,0)"
+        },
+        "m103": {
+            "_cls": "ForeignKey",
+            "_mod": "dbnav.dbcf",
+            "columns": [
+                "RegionID",
+                "RegionID"
+            ],
+            "datatype": "bool",
+            "name": "has_region",
+            "roles": [
+                "SUBJ",
+                "OBJ"
+            ],
+            "sort": [
+                "Territories",
+                "Region"
+            ],
+            "sqldef": "IF({0}.RegionID={1}.RegionID,1,0)"
+        },
+        "m104": {
+            "_cls": "ForeignKey",
+            "_mod": "dbnav.dbcf",
+            "columns": [
+                "CategoryID",
+                "CategoryID"
+            ],
+            "datatype": "bool",
+            "name": "has_category",
+            "roles": [
+                "SUBJ",
+                "OBJ"
+            ],
+            "sort": [
+                "Products",
+                "Categories"
+            ],
+            "sqldef": "IF({0}.CategoryID={1}.CategoryID,1,0)"
+        },
+        "m105": {
+            "_cls": "ForeignKey",
+            "_mod": "dbnav.dbcf",
+            "columns": [
+                "SupplierID",
+                "SupplierID"
+            ],
+            "datatype": "bool",
+            "name": "has_supplier",
+            "roles": [
+                "SUBJ",
+                "OBJ"
+            ],
+            "sort": [
+                "Products",
+                "Suppliers"
+            ],
+            "sqldef": "IF({0}.SupplierID={1}.SupplierID,1,0)"
+        },
+        "m106": {
+            "_cls": "ForeignKey",
+            "_mod": "dbnav.dbcf",
+            "columns": [
+                "ProductID",
+                "ProductID"
+            ],
+            "datatype": "bool",
+            "name": "has_product",
+            "roles": [
+                "SUBJ",
+                "OBJ"
+            ],
+            "sort": [
+                "OrderDetails",
+                "Products"
+            ],
+            "sqldef": "IF({0}.ProductID={1}.ProductID,1,0)"
+        },
+        "m107": {
+            "_cls": "ForeignKey",
+            "_mod": "dbnav.dbcf",
+            "columns": [
+                "CustomerID",
+                "CustomerID"
+            ],
+            "datatype": "bool",
+            "name": "has_customer",
+            "roles": [
+                "SUBJ",
+                "OBJ"
+            ],
+            "sort": [
+                "Orders",
+                "Customers"
+            ],
+            "sqldef": "IF({0}.CustomerID={1}.CustomerID,1,0)"
+        },
+        "m108": {
+            "_cls": "ForeignKey",
+            "_mod": "dbnav.dbcf",
+            "columns": [
+                "ReportsTo",
+                "EmployeeID"
+            ],
+            "datatype": "bool",
+            "name": "reports_to",
+            "roles": [
+                "SUBJ",
+                "OBJ"
+            ],
+            "sort": [
+                "Employees",
+                "Employees"
+            ],
+            "sqldef": "IF({0}.ReportsTo={1}.EmployeeID,1,0)"
+        },
+        "m109": {
+            "_cls": "ForeignKey",
+            "_mod": "dbnav.dbcf",
+            "columns": [
+                "ShipVia",
+                "ShipperID"
+            ],
+            "datatype": "bool",
+            "name": "has_shipper",
+            "roles": [
+                "SUBJ",
+                "OBJ"
+            ],
+            "sort": [
+                "Orders",
+                "Shippers"
+            ],
+            "sqldef": "IF({0}.ShipVia={1}.ShipperID,1,0)"
         },
         "m11": {
             "_cls": "DBColumn",
@@ -1154,22 +1325,1451 @@
                 "Customers"
             ],
             "sqldef": "{0}.CustomerID"
+        },
+        "m92": {
+            "_cls": "ForeignKey",
+            "_mod": "dbnav.dbcf",
+            "columns": [
+                "OrderID",
+                "OrderID"
+            ],
+            "datatype": "bool",
+            "name": "has_order",
+            "roles": [
+                "SUBJ",
+                "OBJ"
+            ],
+            "sort": [
+                "OrderDetails",
+                "Orders"
+            ],
+            "sqldef": "IF({0}.OrderID={1}.OrderID,1,0)"
+        },
+        "m96": {
+            "_cls": "ForeignKey",
+            "_mod": "dbnav.dbcf",
+            "columns": [
+                "CustomerID",
+                "CustomerID"
+            ],
+            "datatype": "bool",
+            "name": "has_customer",
+            "roles": [
+                "SUBJ",
+                "OBJ"
+            ],
+            "sort": [
+                "CustomerCustomerDemo",
+                "Customers"
+            ],
+            "sqldef": "IF({0}.CustomerID={1}.CustomerID,1,0)"
+        },
+        "m97": {
+            "_cls": "ForeignKey",
+            "_mod": "dbnav.dbcf",
+            "columns": [
+                "CustomerTypeID",
+                "CustomerTypeID"
+            ],
+            "datatype": "bool",
+            "name": "has_demographics",
+            "roles": [
+                "SUBJ",
+                "OBJ"
+            ],
+            "sort": [
+                "CustomerCustomerDemo",
+                "CustomerDemographics"
+            ],
+            "sqldef": "IF({0}.CustomerTypeID={1}.CustomerTypeID,1,0)"
+        },
+        "m98": {
+            "_cls": "ForeignKey",
+            "_mod": "dbnav.dbcf",
+            "columns": [
+                "EmployeeID",
+                "EmployeeID"
+            ],
+            "datatype": "bool",
+            "name": "has_employee",
+            "roles": [
+                "SUBJ",
+                "OBJ"
+            ],
+            "sort": [
+                "Orders",
+                "Employees"
+            ],
+            "sqldef": "IF({0}.EmployeeID={1}.EmployeeID,1,0)"
         }
     },
     "output": {
-        "Categories": "{0}.CategoryID",
+        "Categories": "{0}.CategoryName",
         "CustomerCustomerDemo": "CONCAT({0}.CustomerID,', ',{0}.CustomerTypeID)",
         "CustomerDemographics": "{0}.CustomerTypeID",
-        "Customers": "{0}.CustomerID",
+        "Customers": "{0}.CompanyName",
         "EmployeeTerritories": "CONCAT({0}.EmployeeID,', ',{0}.TerritoryID)",
-        "Employees": "{0}.EmployeeID",
+        "Employees": "CONCAT({0}.FirstName,' ',{0}.LastName)",
         "OrderDetails": "CONCAT({0}.OrderID,', ',{0}.ProductID)",
         "Orders": "{0}.OrderID",
-        "Products": "{0}.ProductID",
+        "Products": "{0}.ProductName",
         "Region": "{0}.RegionID",
-        "Shippers": "{0}.ShipperID",
-        "Suppliers": "{0}.SupplierID",
-        "Territories": "{0}.TerritoryID"
+        "Shippers": "{0}.CompanyName",
+        "Suppliers": "{0}.CompanyName",
+        "Territories": "{0}.TerritoryDescription"
     },
-    "rcontexts": {}
+    "rcontexts": {
+        "m101": {
+            "_cls": "BooleanFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "ForeignKey",
+                "_mod": "dbnav.dbcf",
+                "columns": [
+                    "EmployeeID",
+                    "EmployeeID"
+                ],
+                "datatype": "bool",
+                "name": "has_employee",
+                "roles": [
+                    "SUBJ",
+                    "OBJ"
+                ],
+                "sort": [
+                    "EmployeeTerritories",
+                    "Employees"
+                ],
+                "sqldef": "IF({0}.EmployeeID={1}.EmployeeID,1,0)"
+            },
+            "mva_id": "m101"
+        },
+        "m102": {
+            "_cls": "BooleanFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "ForeignKey",
+                "_mod": "dbnav.dbcf",
+                "columns": [
+                    "TerritoryID",
+                    "TerritoryID"
+                ],
+                "datatype": "bool",
+                "name": "has_territory",
+                "roles": [
+                    "SUBJ",
+                    "OBJ"
+                ],
+                "sort": [
+                    "EmployeeTerritories",
+                    "Territories"
+                ],
+                "sqldef": "IF({0}.TerritoryID={1}.TerritoryID,1,0)"
+            },
+            "mva_id": "m102"
+        },
+        "m103": {
+            "_cls": "BooleanFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "ForeignKey",
+                "_mod": "dbnav.dbcf",
+                "columns": [
+                    "RegionID",
+                    "RegionID"
+                ],
+                "datatype": "bool",
+                "name": "has_region",
+                "roles": [
+                    "SUBJ",
+                    "OBJ"
+                ],
+                "sort": [
+                    "Territories",
+                    "Region"
+                ],
+                "sqldef": "IF({0}.RegionID={1}.RegionID,1,0)"
+            },
+            "mva_id": "m103"
+        },
+        "m104": {
+            "_cls": "BooleanFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "ForeignKey",
+                "_mod": "dbnav.dbcf",
+                "columns": [
+                    "CategoryID",
+                    "CategoryID"
+                ],
+                "datatype": "bool",
+                "name": "has_category",
+                "roles": [
+                    "SUBJ",
+                    "OBJ"
+                ],
+                "sort": [
+                    "Products",
+                    "Categories"
+                ],
+                "sqldef": "IF({0}.CategoryID={1}.CategoryID,1,0)"
+            },
+            "mva_id": "m104"
+        },
+        "m105": {
+            "_cls": "BooleanFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "ForeignKey",
+                "_mod": "dbnav.dbcf",
+                "columns": [
+                    "SupplierID",
+                    "SupplierID"
+                ],
+                "datatype": "bool",
+                "name": "has_supplier",
+                "roles": [
+                    "SUBJ",
+                    "OBJ"
+                ],
+                "sort": [
+                    "Products",
+                    "Suppliers"
+                ],
+                "sqldef": "IF({0}.SupplierID={1}.SupplierID,1,0)"
+            },
+            "mva_id": "m105"
+        },
+        "m106": {
+            "_cls": "BooleanFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "ForeignKey",
+                "_mod": "dbnav.dbcf",
+                "columns": [
+                    "ProductID",
+                    "ProductID"
+                ],
+                "datatype": "bool",
+                "name": "has_product",
+                "roles": [
+                    "SUBJ",
+                    "OBJ"
+                ],
+                "sort": [
+                    "OrderDetails",
+                    "Products"
+                ],
+                "sqldef": "IF({0}.ProductID={1}.ProductID,1,0)"
+            },
+            "mva_id": "m106"
+        },
+        "m107": {
+            "_cls": "BooleanFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "ForeignKey",
+                "_mod": "dbnav.dbcf",
+                "columns": [
+                    "CustomerID",
+                    "CustomerID"
+                ],
+                "datatype": "bool",
+                "name": "has_customer",
+                "roles": [
+                    "SUBJ",
+                    "OBJ"
+                ],
+                "sort": [
+                    "Orders",
+                    "Customers"
+                ],
+                "sqldef": "IF({0}.CustomerID={1}.CustomerID,1,0)"
+            },
+            "mva_id": "m107"
+        },
+        "m108": {
+            "_cls": "BooleanFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "ForeignKey",
+                "_mod": "dbnav.dbcf",
+                "columns": [
+                    "ReportsTo",
+                    "EmployeeID"
+                ],
+                "datatype": "bool",
+                "name": "reports_to",
+                "roles": [
+                    "SUBJ",
+                    "OBJ"
+                ],
+                "sort": [
+                    "Employees",
+                    "Employees"
+                ],
+                "sqldef": "IF({0}.ReportsTo={1}.EmployeeID,1,0)"
+            },
+            "mva_id": "m108"
+        },
+        "m109": {
+            "_cls": "BooleanFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "ForeignKey",
+                "_mod": "dbnav.dbcf",
+                "columns": [
+                    "ShipVia",
+                    "ShipperID"
+                ],
+                "datatype": "bool",
+                "name": "has_shipper",
+                "roles": [
+                    "SUBJ",
+                    "OBJ"
+                ],
+                "sort": [
+                    "Orders",
+                    "Shippers"
+                ],
+                "sqldef": "IF({0}.ShipVia={1}.ShipperID,1,0)"
+            },
+            "mva_id": "m109"
+        },
+        "m11": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "ContactName",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Customers"
+                ],
+                "sqldef": "{0}.ContactName"
+            },
+            "mva_id": "m11"
+        },
+        "m12": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "ContactTitle",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Customers"
+                ],
+                "sqldef": "{0}.ContactTitle"
+            },
+            "mva_id": "m12"
+        },
+        "m13": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "Address",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Customers"
+                ],
+                "sqldef": "{0}.Address"
+            },
+            "mva_id": "m13"
+        },
+        "m14": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "City",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Customers"
+                ],
+                "sqldef": "{0}.City"
+            },
+            "mva_id": "m14"
+        },
+        "m15": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "Region",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Customers"
+                ],
+                "sqldef": "{0}.Region"
+            },
+            "mva_id": "m15"
+        },
+        "m16": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "PostalCode",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Customers"
+                ],
+                "sqldef": "{0}.PostalCode"
+            },
+            "mva_id": "m16"
+        },
+        "m17": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "Country",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Customers"
+                ],
+                "sqldef": "{0}.Country"
+            },
+            "mva_id": "m17"
+        },
+        "m18": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "Phone",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Customers"
+                ],
+                "sqldef": "{0}.Phone"
+            },
+            "mva_id": "m18"
+        },
+        "m19": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "Fax",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Customers"
+                ],
+                "sqldef": "{0}.Fax"
+            },
+            "mva_id": "m19"
+        },
+        "m25": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "Title",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Employees"
+                ],
+                "sqldef": "{0}.Title"
+            },
+            "mva_id": "m25"
+        },
+        "m26": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "TitleOfCourtesy",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Employees"
+                ],
+                "sqldef": "{0}.TitleOfCourtesy"
+            },
+            "mva_id": "m26"
+        },
+        "m29": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "Address",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Employees"
+                ],
+                "sqldef": "{0}.Address"
+            },
+            "mva_id": "m29"
+        },
+        "m30": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "City",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Employees"
+                ],
+                "sqldef": "{0}.City"
+            },
+            "mva_id": "m30"
+        },
+        "m31": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "Region",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Employees"
+                ],
+                "sqldef": "{0}.Region"
+            },
+            "mva_id": "m31"
+        },
+        "m32": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "PostalCode",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Employees"
+                ],
+                "sqldef": "{0}.PostalCode"
+            },
+            "mva_id": "m32"
+        },
+        "m33": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "Country",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Employees"
+                ],
+                "sqldef": "{0}.Country"
+            },
+            "mva_id": "m33"
+        },
+        "m34": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "HomePhone",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Employees"
+                ],
+                "sqldef": "{0}.HomePhone"
+            },
+            "mva_id": "m34"
+        },
+        "m35": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "Extension",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Employees"
+                ],
+                "sqldef": "{0}.Extension"
+            },
+            "mva_id": "m35"
+        },
+        "m39": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "PhotoPath",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Employees"
+                ],
+                "sqldef": "{0}.PhotoPath"
+            },
+            "mva_id": "m39"
+        },
+        "m53": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "ShipName",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Orders"
+                ],
+                "sqldef": "{0}.ShipName"
+            },
+            "mva_id": "m53"
+        },
+        "m54": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "ShipAddress",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Orders"
+                ],
+                "sqldef": "{0}.ShipAddress"
+            },
+            "mva_id": "m54"
+        },
+        "m55": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "ShipCity",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Orders"
+                ],
+                "sqldef": "{0}.ShipCity"
+            },
+            "mva_id": "m55"
+        },
+        "m56": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "ShipRegion",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Orders"
+                ],
+                "sqldef": "{0}.ShipRegion"
+            },
+            "mva_id": "m56"
+        },
+        "m57": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "ShipPostalCode",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Orders"
+                ],
+                "sqldef": "{0}.ShipPostalCode"
+            },
+            "mva_id": "m57"
+        },
+        "m58": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "ShipCountry",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Orders"
+                ],
+                "sqldef": "{0}.ShipCountry"
+            },
+            "mva_id": "m58"
+        },
+        "m63": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "QuantityPerUnit",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Products"
+                ],
+                "sqldef": "{0}.QuantityPerUnit"
+            },
+            "mva_id": "m63"
+        },
+        "m73": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "Phone",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Shippers"
+                ],
+                "sqldef": "{0}.Phone"
+            },
+            "mva_id": "m73"
+        },
+        "m76": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "ContactName",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Suppliers"
+                ],
+                "sqldef": "{0}.ContactName"
+            },
+            "mva_id": "m76"
+        },
+        "m77": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "ContactTitle",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Suppliers"
+                ],
+                "sqldef": "{0}.ContactTitle"
+            },
+            "mva_id": "m77"
+        },
+        "m78": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "Address",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Suppliers"
+                ],
+                "sqldef": "{0}.Address"
+            },
+            "mva_id": "m78"
+        },
+        "m79": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "City",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Suppliers"
+                ],
+                "sqldef": "{0}.City"
+            },
+            "mva_id": "m79"
+        },
+        "m80": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "Region",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Suppliers"
+                ],
+                "sqldef": "{0}.Region"
+            },
+            "mva_id": "m80"
+        },
+        "m81": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "PostalCode",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Suppliers"
+                ],
+                "sqldef": "{0}.PostalCode"
+            },
+            "mva_id": "m81"
+        },
+        "m82": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "Country",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Suppliers"
+                ],
+                "sqldef": "{0}.Country"
+            },
+            "mva_id": "m82"
+        },
+        "m83": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "Phone",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Suppliers"
+                ],
+                "sqldef": "{0}.Phone"
+            },
+            "mva_id": "m83"
+        },
+        "m84": {
+            "_cls": "PrefixFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "DBColumn",
+                "_mod": "dbnav.dbcf",
+                "datatype": "varchar",
+                "name": "Fax",
+                "roles": [
+                    "ATTR"
+                ],
+                "sort": [
+                    "Suppliers"
+                ],
+                "sqldef": "{0}.Fax"
+            },
+            "mva_id": "m84"
+        },
+        "m92": {
+            "_cls": "BooleanFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "ForeignKey",
+                "_mod": "dbnav.dbcf",
+                "columns": [
+                    "OrderID",
+                    "OrderID"
+                ],
+                "datatype": "bool",
+                "name": "has_order",
+                "roles": [
+                    "SUBJ",
+                    "OBJ"
+                ],
+                "sort": [
+                    "OrderDetails",
+                    "Orders"
+                ],
+                "sqldef": "IF({0}.OrderID={1}.OrderID,1,0)"
+            },
+            "mva_id": "m92"
+        },
+        "m96": {
+            "_cls": "BooleanFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "ForeignKey",
+                "_mod": "dbnav.dbcf",
+                "columns": [
+                    "CustomerID",
+                    "CustomerID"
+                ],
+                "datatype": "bool",
+                "name": "has_customer",
+                "roles": [
+                    "SUBJ",
+                    "OBJ"
+                ],
+                "sort": [
+                    "CustomerCustomerDemo",
+                    "Customers"
+                ],
+                "sqldef": "IF({0}.CustomerID={1}.CustomerID,1,0)"
+            },
+            "mva_id": "m96"
+        },
+        "m97": {
+            "_cls": "BooleanFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "ForeignKey",
+                "_mod": "dbnav.dbcf",
+                "columns": [
+                    "CustomerTypeID",
+                    "CustomerTypeID"
+                ],
+                "datatype": "bool",
+                "name": "has_demographics",
+                "roles": [
+                    "SUBJ",
+                    "OBJ"
+                ],
+                "sort": [
+                    "CustomerCustomerDemo",
+                    "CustomerDemographics"
+                ],
+                "sqldef": "IF({0}.CustomerTypeID={1}.CustomerTypeID,1,0)"
+            },
+            "mva_id": "m97"
+        },
+        "m98": {
+            "_cls": "BooleanFacet",
+            "_mod": "dbnav.dbcf",
+            "db_info": {
+                "_cls": "DatabaseInfo",
+                "_mod": "dbnav.dbcf",
+                "database": "Northwind",
+                "host": "localhost",
+                "password": "dbnav",
+                "user": "dbnav"
+            },
+            "mva": {
+                "_cls": "ForeignKey",
+                "_mod": "dbnav.dbcf",
+                "columns": [
+                    "EmployeeID",
+                    "EmployeeID"
+                ],
+                "datatype": "bool",
+                "name": "has_employee",
+                "roles": [
+                    "SUBJ",
+                    "OBJ"
+                ],
+                "sort": [
+                    "Orders",
+                    "Employees"
+                ],
+                "sqldef": "IF({0}.EmployeeID={1}.EmployeeID,1,0)"
+            },
+            "mva_id": "m98"
+        }
+    }
 }
