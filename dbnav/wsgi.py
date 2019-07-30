@@ -4,7 +4,7 @@ import tempfile
 import urllib
 import pickle
 from http.cookies import SimpleCookie
-from dbnav.control import Control
+from dbnav.control.master import MasterControl
 from dbnav.serialization import dumps, loads
 
 
@@ -24,6 +24,7 @@ class HttpRequest(object):
         n = int(environ.get('CONTENT_LENGTH') or 0)
         self.body = environ['wsgi.input'].read(n)
         self.COOKIES = SimpleCookie(environ.get('HTTP_COOKIE',''))
+
 
 class HttpResponse(object):
 
@@ -86,19 +87,18 @@ def ajax(request):
     try:
         session = request.COOKIES["session"].value
         with open(session,'rb') as file:
-            ctrl = pickle.load(file)
+            master = pickle.load(file)
 
     except (KeyError, FileNotFoundError):
         fd, session = tempfile.mkstemp(prefix="granada_session_data_")
         os.close(fd)
-        ctrl = Control({})
+        master = MasterControl()
 
-    getattr(ctrl, data["cmd"])(**data["args"])
-    views = ctrl.render()
+    views = master.execute(data["ctrl"], data["cmd"], data["args"])
     response = JsonResponse({"views": views})
 
     with open(session,'wb') as file:
-        pickle.dump(ctrl, file)
+        pickle.dump(master, file)
         response.cookies["session"] = session
 
     return response
@@ -140,8 +140,7 @@ def application(environ, start_response):
     response = url.handler(request, **kwargs)
 
     if isinstance(response, JsonResponse):
-        headers = [("Content-type", response.content_type),
-                   ("Content-Length", str(len(response.content)))]
+        headers = [("Content-type", response.content_type), ("Content-Length", str(len(response.content)))]
         for morsel in response.cookies.values():
             headers.append(("Set-Cookie", morsel.output(header='')))
         start_response(response.status, headers)

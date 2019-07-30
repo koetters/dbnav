@@ -2398,9 +2398,9 @@ setup = {
 
     "set_index_view": function(args) {
         render_template(args["slot"],args["template"],args["data"]);
-        $(".js_insert_navigate_view").on("click",handler("insert_navigate_view",["pcf_name"]));
-        $(".js_insert_edit_view").on("click",handler("insert_edit_view",["pcf_name"]));
-        $("#create_form").on("click",".submit",form_handler("create_binding","form"));
+        $(".js_insert_navigate_view").on("click",handler("main","insert_navigate_view",["pcf_name"]));
+        $(".js_insert_edit_view").on("click",handler("main","insert_edit_view",["pcf_name"]));
+        $("#create_form").on("click",".submit",form_handler("index","create_binding","form"));
     },
 
     "set_edit_view": function(args) {
@@ -2409,7 +2409,7 @@ setup = {
 
     "set_navigate_view": function(args) {
         render_template(args["slot"],args["template"],args["data"]);
-        $("svg#graphView").on("click",".js_select_node",handler("select_node",["node_id"]));
+        $("svg#graphView").on("click",".js_select_node",handler("navigator","select_node",["node_id"]));
         $("svg#graphView").on("contextmenu",".js_rightselect_node",ctrl_graph.handlers["rightselect_node"]);
         $("svg#graphView").on("mousemove",ctrl_graph.handlers["move_node"]);
     },
@@ -2426,16 +2426,16 @@ setup = {
 
     "set_links_view": function(args) {
         render_template(args["slot"],args["template"],args["data"]);
-        $(".js_create_edge").on("click",handler("create_edge",["context_id","role_id"]));
-        $(".js_select_edge").on("click",handler("select_edge",["edge_id","role_id"]));
-        $(".js_remove_edge").on("click",handler("remove_edge",["edge_id","role_id"]));
-        $(".js_toggle_display").on("click",handler("toggle_display",["context_id"]));
+        $(".js_create_edge").on("click",handler("navigator","create_edge",["context_id","role_id"]));
+        $(".js_select_edge").on("click",handler("navigator","select_edge",["edge_id","role_id"]));
+        $(".js_remove_edge").on("click",handler("navigator","remove_edge",["edge_id","role_id"]));
+        $(".js_toggle_display").on("click",handler("navigator","toggle_display",["context_id"]));
     },
 
     "set_sort_label_view": function(args) {
         render_template(args["slot"],args["template"],args["data"]);
-        $(".js_set_label").on("click",handler("set_label",["label"]));
-        $(".js_merge").on("click",handler("merge",["target_id"]));
+        $(".js_set_label").on("click",handler("navigator","set_label",["label"]));
+        $(".js_merge").on("click",handler("navigator","merge",["target_id"]));
     },
 
     "set_interval_label_view": function(args) {
@@ -2452,7 +2452,7 @@ setup = {
             stop: function(event,ui) {
                 var new_lower = $("#slider-range").slider("values",0);
                 var new_upper = $("#slider-range").slider("values",1);
-                send_ajax("set_label",{ "label": JSON.stringify([new_lower,new_upper]) });
+                send_ajax("navigator","set_label",{ "label": JSON.stringify([new_lower,new_upper]) });
             }
         });
         $("#interval-min").val($("#slider-range").slider("values",0));
@@ -2461,8 +2461,8 @@ setup = {
 
     "set_prefix_label_view": function(args) {
         render_template(args["slot"],args["template"],args["data"]);
-        $(".js_set_label_on_keyup").on("keyup",handler("set_label",[],"label"));
-        $(".js_set_label").on("click",handler("set_label",["label"]));
+        $(".js_set_label_on_keyup").on("keyup",handler("navigator","set_label",[],"label"));
+        $(".js_set_label").on("click",handler("navigator","set_label",["label"]));
         $("#prefix_input").val(args["data"]["label"]).focus();
     },
 
@@ -2472,7 +2472,7 @@ setup = {
 
     "set_pcf_sorts_view": function(args) {
         render_template(args["slot"],args["template"],args["data"]);
-        $(".js_select_sort").on("click",handler("select_sort",["sort"]));
+        $(".js_select_sort").on("click",handler("editor","select_sort",["sort"]));
     },
 
     "set_sort_api_view": function(args) {
@@ -2480,14 +2480,14 @@ setup = {
             $("#"+args["slot"]).empty();
         } else {
             render_template(args["slot"],args["template"],args["data"]);
-            $(".js_set_output_sql").on("change",handler("set_output_sql",[],"sqlterm"));
-            $(".js_scale_mva").on("change",handler("scale_mva",["mva_id"],"context_class"));
-            $(".js_delete_mva").on("click",handler("delete_mva",["mva_id"]));
-            $(".js_select_mva_form2").on("click",handler("select_mva_form2",["form_id"]));
-            $("#mvaForm1").on("click",".submit",form_handler("create_mva1","form_data"));
-            $("#mvaForm2").on("click",".submit",form_handler("create_mva2","form_data"));
-            $("#mvaForm1").on("change",":input",form_handler("update_form1","form_data"));
-            $("#mvaForm2").on("change",":input",form_handler("update_form2","form_data"));
+            $(".js_set_output_sql").on("change",handler("editor","set_output_sql",[],"sqlterm"));
+            $(".js_scale_mva").on("change",handler("editor","scale_mva",["mva_id"],"context_class"));
+            $(".js_delete_mva").on("click",handler("editor","delete_mva",["mva_id"]));
+            $(".js_select_mva_form2").on("click",handler("editor","select_mva_form2",["form_id"]));
+            $("#mvaForm1").on("click",".submit",form_handler("editor","create_mva1","form_data"));
+            $("#mvaForm2").on("click",".submit",form_handler("editor","create_mva2","form_data"));
+            $("#mvaForm1").on("change",":input",form_handler("editor","update_form1","form_data"));
+            $("#mvaForm2").on("change",":input",form_handler("editor","update_form2","form_data"));
         }
     },
 
@@ -2500,11 +2500,12 @@ setup = {
     },
 }
 
-function send_ajax(cmd,args) {
+function send_ajax(ctrl,cmd,args) {
     $.ajax({
         url: "/ajax/",
         type: "POST",
         data: JSON.stringify({
+            "ctrl": ctrl,
             "cmd": cmd,
             "args": args,
         }),
@@ -2526,7 +2527,7 @@ function render_template(slot,template,data) {
 
 }
 
-function handler(cmd,params,value=null) {
+function handler(ctrl,cmd,params,value=null) {
 
     return function(e) {
         args = {}
@@ -2539,11 +2540,11 @@ function handler(cmd,params,value=null) {
             args[value] = $(e.target).val();
         }
 
-        send_ajax(cmd,args);
+        send_ajax(ctrl,cmd,args);
     };
 }
 
-function form_handler(cmd,param) {
+function form_handler(ctrl,cmd,param) {
 
     return function(e) {
         $form = $(e.delegateTarget);
@@ -2552,7 +2553,7 @@ function form_handler(cmd,param) {
         $.each(serialized_form,function(index,item) {
             form_data[item.name] = item.value;
         });
-        send_ajax(cmd,{[param]:form_data});
+        send_ajax(ctrl,cmd,{[param]:form_data});
     };
 }
 
@@ -2587,7 +2588,7 @@ ctrl_graph = {
             } else {
 
                 var q = ctrl_graph.view_graph.pos(ctrl_graph.drag_selection);
-                send_ajax("set_position",{"node_id":ctrl_graph.drag_selection,"x":q.x,"y":q.y});
+                send_ajax("navigator","set_position",{"node_id":ctrl_graph.drag_selection,"x":q.x,"y":q.y});
                 ctrl_graph.drag_selection = null;
                 ctrl_graph.offset = null;
             }
@@ -2609,7 +2610,7 @@ ctrl_graph = {
 
 $(document).ready(function(){
 
-    send_ajax("insert_index_view",{});
+    send_ajax("main","insert_index_view",{});
 });
 
 </script>
