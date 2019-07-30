@@ -1,18 +1,25 @@
 import re
 import os
-import cgi
+import urllib
 from dbnav.control import Control
 from dbnav.serialization import dumps, loads
 
 
 class URL(object):
 
-    def __init__(self, pattern, method, schema=[], slash=True):
+    def __init__(self, pattern, handler, slash=True):
         self.pattern = pattern
-        self.method = method
-        self.schema = schema
+        self.handler = handler
         self.slash = slash
 
+
+class HttpRequest(object):
+
+    def __init__(self, environ):
+        self.method = environ['REQUEST_METHOD'].upper()
+        self.GET = dict(urllib.parse.parse_qsl(environ.get('QUERY_STRING','')))
+        n = int(environ.get('CONTENT_LENGTH') or 0)
+        self.body = environ['wsgi.input'].read(n)
 
 class HttpResponse(object):
 
@@ -38,7 +45,7 @@ class JsonResponse(object):
         self.status = status
 
 
-def index():
+def index(request):
 
     basedir = os.path.dirname(os.path.realpath(__file__))
     h = open(os.path.join(basedir, "resources", "server", "html", "index.html"), "r")
@@ -48,20 +55,20 @@ def index():
     return HttpResponse(content)
 
 
-def css(path):
+def css(request, filename):
 
     basedir = os.path.dirname(os.path.realpath(__file__))
-    h = open(os.path.join(basedir, "resources", "server", "css", path), "r")
+    h = open(os.path.join(basedir, "resources", "server", "css", filename), "r")
     content = h.read()
     h.close()
 
     return HttpResponse(content, content_type="text/css")
 
 
-def scripts(path):
+def scripts(request, filename):
 
     basedir = os.path.dirname(os.path.realpath(__file__))
-    h = open(os.path.join(basedir, "resources", "server", "scripts", path), "r")
+    h = open(os.path.join(basedir, "resources", "server", "scripts", filename), "r")
     content = h.read()
     h.close()
 
@@ -70,9 +77,10 @@ def scripts(path):
 
 ########### HTTP #################
 
-def ajax(cmd, args, state):
-    ctrl = Control(state)
-    getattr(ctrl, cmd)(**args)
+def ajax(request):
+    data = loads(request.body)
+    ctrl = Control(data["state"])
+    getattr(ctrl, data["cmd"])(**data["args"])
     views = ctrl.render()
     return JsonResponse({"state": ctrl.state, "views": views})
 
@@ -81,12 +89,11 @@ def ajax(cmd, args, state):
 def application(environ, start_response):
 
     path = environ.get('PATH_INFO', '')
-    request_method = environ['REQUEST_METHOD']
 
     urls = [
         URL(r'^$', index),
-        URL(r'^css/(?P<path>.+)$', css, slash=False),
-        URL(r'^scripts/(?P<path>.+)$', scripts, slash=False),
+        URL(r'^css/(?P<filename>.+)$', css, slash=False),
+        URL(r'^scripts/(?P<filename>.+)$', scripts, slash=False),
         URL(r'^ajax$', ajax),
     ]
 
@@ -109,19 +116,9 @@ def application(environ, start_response):
         start_response("301 Moved Permanently", [("Location", "/"+path+"/")])
         return [b"1"]
 
-    elif request_method == 'GET':
-        # cgi.parse_qs deprecated, urlparse.parse_qs can be used instead
-        get = cgi.parse_qs(environ["QUERY_STRING"])
-        args = {param: cgi.escape(get[param][0]) for param in url.schema}
-        args.update(match.groupdict())
-        response = url.method(**args)
-
-    elif request_method == 'POST':
-        n = int(environ.get("CONTENT_LENGTH", 0))
-        data = environ['wsgi.input'].read(n)
-        args = loads(data)
-        args.update(match.groupdict())
-        response = url.method(**args)
+    kwargs = match.groupdict()
+    request = HttpRequest(environ)
+    response = url.handler(request, **kwargs)
 
     if isinstance(response, JsonResponse):
         headers = [("Content-type", response.content_type), ("Content-Length", str(len(response.content)))]
