@@ -1,6 +1,9 @@
 import re
 import os
+import tempfile
 import urllib
+import pickle
+from http.cookies import SimpleCookie
 from dbnav.control import Control
 from dbnav.serialization import dumps, loads
 
@@ -20,6 +23,7 @@ class HttpRequest(object):
         self.GET = dict(urllib.parse.parse_qsl(environ.get('QUERY_STRING','')))
         n = int(environ.get('CONTENT_LENGTH') or 0)
         self.body = environ['wsgi.input'].read(n)
+        self.COOKIES = SimpleCookie(environ.get('HTTP_COOKIE',''))
 
 class HttpResponse(object):
 
@@ -43,6 +47,7 @@ class JsonResponse(object):
         self.content = dumps(content).encode("utf-8")
         self.content_type = content_type
         self.status = status
+        self.cookies = SimpleCookie()
 
 
 def index(request):
@@ -75,14 +80,28 @@ def scripts(request, filename):
     return HttpResponse(content, content_type="text/javascript")
 
 
-########### HTTP #################
-
 def ajax(request):
     data = loads(request.body)
-    ctrl = Control(data["state"])
+
+    try:
+        session = request.COOKIES["session"].value
+        with open(session,'rb') as file:
+            ctrl = pickle.load(file)
+
+    except (KeyError, FileNotFoundError):
+        fd, session = tempfile.mkstemp(prefix="granada_session_data_")
+        os.close(fd)
+        ctrl = Control({})
+
     getattr(ctrl, data["cmd"])(**data["args"])
     views = ctrl.render()
-    return JsonResponse({"state": ctrl.state, "views": views})
+    response = JsonResponse({"views": views})
+
+    with open(session,'wb') as file:
+        pickle.dump(ctrl, file)
+        response.cookies["session"] = session
+
+    return response
 
 
 # Set content-type header even if no content is returned! The reason is Firefox bug 521301.
@@ -112,7 +131,7 @@ def application(environ, start_response):
         start_response("404 NOT FOUND", [("Content-type", "text/plain")])
         return [b"Not Found"]
 
-    elif url.slash and not trailing_slash:
+    if url.slash and not trailing_slash:
         start_response("301 Moved Permanently", [("Location", "/"+path+"/")])
         return [b"1"]
 
@@ -121,7 +140,10 @@ def application(environ, start_response):
     response = url.handler(request, **kwargs)
 
     if isinstance(response, JsonResponse):
-        headers = [("Content-type", response.content_type), ("Content-Length", str(len(response.content)))]
+        headers = [("Content-type", response.content_type),
+                   ("Content-Length", str(len(response.content)))]
+        for morsel in response.cookies.values():
+            headers.append(("Set-Cookie", morsel.output(header='')))
         start_response(response.status, headers)
         return [response.content]
 

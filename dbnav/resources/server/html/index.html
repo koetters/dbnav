@@ -2394,8 +2394,6 @@ class Graph {
 
 ///////////////// Control ////////////////////////
 
-state = {};
-
 setup = {
 
     "set_index_view": function(args) {
@@ -2509,13 +2507,11 @@ function send_ajax(cmd,args) {
         data: JSON.stringify({
             "cmd": cmd,
             "args": args,
-            "state": state,
         }),
         contentType: "application/json",
         dataType: "json",
     }).done(function(result,status,jqxhr) {
 
-        state = result["state"];
         for(let view of result["views"]) {
             setup[view["cmd"]](view["args"]);
         }
