@@ -9,6 +9,7 @@ class NavigatorControl(Control):
 
         self.name = "navigator"
         self.slots = {}
+        #self.slots = {"A": None}
         self.graph = Graph(Storage.read(pcf_name))
         self.current_node = self.graph.add_node(None, Point(305, 150))
         self.current_link = {"linkID": None, "roleID": None}

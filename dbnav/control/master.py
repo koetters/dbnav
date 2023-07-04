@@ -10,3 +10,5 @@ class MasterControl(object):
         ctrl = self.root.find(name)
         getattr(ctrl, cmd)(**args)
         return ctrl.render()
+
+#    def render(self):
