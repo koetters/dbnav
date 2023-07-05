@@ -1,6 +1,7 @@
 import re
 import os
 import cgi
+import urllib
 from dbnav.control import Control
 from dbnav.serialization import dumps, loads
 
@@ -110,8 +111,7 @@ def application(environ, start_response):
         return [b"1"]
 
     elif request_method == 'GET':
-        # cgi.parse_qs deprecated, urlparse.parse_qs can be used instead
-        get = cgi.parse_qs(environ["QUERY_STRING"])
+        get = urllib.parse.parse_qs(environ["QUERY_STRING"])
         args = {param: cgi.escape(get[param][0]) for param in url.schema}
         args.update(match.groupdict())
         response = url.method(**args)
