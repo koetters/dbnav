@@ -529,7 +529,7 @@ class DBContextFamily(object):
         cnx.close()
 
         columns = {}
-        assert(header1[0] == "column_name" and header1[1] == "table_name" and header1[2] == "data_type")
+        assert(header1[0] == "COLUMN_NAME" and header1[1] == "TABLE_NAME" and header1[2] == "DATA_TYPE")
 
         for row in rows1:
             column = row[0]
