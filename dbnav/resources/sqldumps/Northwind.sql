@@ -19,6 +19,8 @@ SET time_zone = "+00:00";
 --
 -- Database: `Northwind`
 --
+CREATE DATABASE IF NOT EXISTS Northwind;
+Use Northwind;
 
 -- --------------------------------------------------------
 
